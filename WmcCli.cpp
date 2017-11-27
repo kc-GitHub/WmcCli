@@ -117,7 +117,7 @@ void WmcCli::HelpScreen(void)
     Serial.println("ADD x        : Add loc with address x");
     Serial.println("DEL x        : Delete loc with address x");
     Serial.println("CHANGE x y z : Assign function z to button y of loc with address x.");
-    Serial.println("LOCLIST      : Show all programmed locs.");
+    Serial.println("LIST         : Show all programmed locs.");
     Serial.println("DUMP         : Dump data for backup.");
     Serial.println("SSID <>      : Set SSID name (Wifi) to connect to.");
     Serial.println("PASSWORD <>  : Set password (Wifi).");
