@@ -41,6 +41,16 @@ private:
     void HelpScreen(void);
 
     /**
+     * Write SSID name.
+     */
+    void SsIdWriteName(void);
+
+    /**
+     * Write SSID password.
+     */
+    void SsIdWritePassword(void);
+
+    /**
      * Try to add loc.
      */
     void Add(void);
@@ -79,6 +89,8 @@ private:
     uint16_t m_Function;
     uint16_t m_Button;
     char m_NameStr[10];
+    char m_SsidName[50];
+    char m_SsidPassword[50];
 
     static const char* LocAdd;
     static const char* LocDelete;

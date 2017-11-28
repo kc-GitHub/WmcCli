@@ -1,18 +1,30 @@
-/**
- * Functions to show data on the display of the Wmc application.
- */
+/***********************************************************************************************************************
+   @file  WmcCli.cpp
+   @brief Simple command line interface for the WMC app.
+ **********************************************************************************************************************/
 
-// include this library's description file
+/***********************************************************************************************************************
+   I N C L U D E S
+ **********************************************************************************************************************/
 #include "WmcCli.h"
+#include "eep_cfg.h"
+#include <EEPROM.h>
 
-const char* WmcCli::LocAdd    = "ADD";
-const char* WmcCli::LocDelete = "DEL";
-const char* WmcCli::LocChange = "CHANGE";
-const char* WmcCli::Ssid      = "SSID";
-const char* WmcCli::Password  = "PASSWORD";
-const char* WmcCli::Help      = "HELP";
-const char* WmcCli::LocList   = "LIST";
-const char* WmcCli::Dump      = "DUMP";
+/***********************************************************************************************************************
+   D A T A   D E C L A R A T I O N S (exported, local)
+ **********************************************************************************************************************/
+const char* WmcCli::LocAdd    = "add";
+const char* WmcCli::LocDelete = "del ";
+const char* WmcCli::LocChange = "change ";
+const char* WmcCli::Ssid      = "ssid ";
+const char* WmcCli::Password  = "password ";
+const char* WmcCli::Help      = "help";
+const char* WmcCli::LocList   = "list";
+const char* WmcCli::Dump      = "dump";
+
+/***********************************************************************************************************************
+   F U N C T I O N S
+ **********************************************************************************************************************/
 
 /***********************************************************************************************************************
  */
@@ -32,6 +44,7 @@ void WmcCli::Init()
     Serial.begin(115200);
     m_locLib.Init();
 }
+
 /***********************************************************************************************************************
  * Read data from serial port, if CR is received check the received data and perform action if valif command is
  * received.
@@ -44,7 +57,6 @@ void WmcCli::Update(void)
 
     while (DataRx != -1)
     {
-        DataRx = toupper(DataRx);
         Serial.print((char)(DataRx));
         switch (DataRx)
         {
@@ -92,9 +104,13 @@ void WmcCli::Process(void)
     }
     else if (strncmp(m_bufferRx, Ssid, strlen(Ssid)) == 0)
     {
+        // Write SSID name to EEPROM
+        SsIdWriteName();
     }
     else if (strncmp(m_bufferRx, Password, strlen(Password)) == 0)
     {
+        // Write SSID password to EEPROM
+        SsIdWritePassword();
     }
     else if (strncmp(m_bufferRx, LocList, strlen(LocList)) == 0)
     {
@@ -114,16 +130,43 @@ void WmcCli::Process(void)
  */
 void WmcCli::HelpScreen(void)
 {
-    Serial.println("ADD x        : Add loc with address x");
-    Serial.println("DEL x        : Delete loc with address x");
-    Serial.println("CHANGE x y z : Assign function z to button y of loc with address x.");
-    Serial.println("LIST         : Show all programmed locs.");
-    Serial.println("DUMP         : Dump data for backup.");
-    Serial.println("SSID <>      : Set SSID name (Wifi) to connect to.");
-    Serial.println("PASSWORD <>  : Set password (Wifi).");
-    Serial.println("HELP         : This screen.");
+    Serial.println("add x        : Add loc with address x");
+    Serial.println("del x        : Delete loc with address x");
+    Serial.println("change x y z : Assign function z to button y of loc with address x.");
+    Serial.println("list         : Show all programmed locs.");
+    Serial.println("dump         : Dump data for backup.");
+    Serial.println("ssid <>      : Set SSID name (Wifi) to connect to.");
+    Serial.println("password <>  : Set password (Wifi).");
+    Serial.println("help         : This screen.");
 }
 
+/***********************************************************************************************************************
+ */
+void WmcCli::SsIdWriteName(void)
+{
+    memset(m_SsidName, '\0', sizeof(m_SsidName));
+    memcpy(m_SsidName, &m_bufferRx[strlen(Ssid)], strlen(&m_bufferRx[strlen(Ssid)]));
+    EEPROM.put(EepCfg::SsidAddress, m_SsidName);
+    EEPROM.commit();
+
+    Serial.print("SSID name : ");
+    Serial.print(m_SsidName);
+    Serial.println(" stored.");
+}
+
+/***********************************************************************************************************************
+ */
+void WmcCli::SsIdWritePassword(void)
+{
+    memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
+    memcpy(m_SsidPassword, &m_bufferRx[strlen(Password)], strlen(&m_bufferRx[strlen(Password)]));
+    EEPROM.put(EepCfg::SsidPasswordAddress, m_SsidPassword);
+    EEPROM.commit();
+
+    Serial.print("SSID password : ");
+    Serial.print(m_SsidPassword);
+    Serial.println(" stored.");
+}
 /***********************************************************************************************************************
  */
 void WmcCli::Add(void)
@@ -278,12 +321,12 @@ void WmcCli::DumpData(void)
     while (Index < m_locLib.GetNumberOfLocs())
     {
         Data = m_locLib.LocGetAllDataByIndex(Index);
-        Serial.print("ADD ");
+        Serial.print(LocAdd);
         Serial.println(Data->Addres);
 
         for (FunctionIndex = 0; FunctionIndex < 5; FunctionIndex++)
         {
-            Serial.print("CHANGE ");
+            Serial.print(LocChange);
             Serial.print(Data->Addres);
             Serial.print(" ");
             Serial.print(FunctionIndex);
@@ -293,4 +336,14 @@ void WmcCli::DumpData(void)
 
         Index++;
     }
+
+    memset(m_SsidName, '\0', sizeof(m_SsidName));
+    memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
+    EEPROM.get(EepCfg::SsidAddress, m_SsidName);
+    Serial.print(Ssid);
+    Serial.println(m_SsidName);
+
+    EEPROM.get(EepCfg::SsidPasswordAddress, m_SsidPassword);
+    Serial.print(Password);
+    Serial.println(m_SsidPassword);
 }
