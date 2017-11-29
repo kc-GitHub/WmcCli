@@ -51,6 +51,16 @@ private:
     void SsIdWritePassword(void);
 
     /**
+     * Write IP address to connect to.
+     */
+    void IpAddressWrite(void);
+
+    /**
+     * Show programmed IP settings.
+     */
+    void ShowNetworkSettings(void);
+
+    /**
      * Try to add loc.
      */
     void Add(void);
@@ -91,12 +101,15 @@ private:
     char m_NameStr[10];
     char m_SsidName[50];
     char m_SsidPassword[50];
+    uint8_t m_IpAddress[4];
 
     static const char* LocAdd;
     static const char* LocDelete;
     static const char* LocChange;
     static const char* Ssid;
     static const char* Password;
+    static const char* IpAdrress;
+    static const char* Network;
     static const char* Help;
     static const char* LocList;
     static const char* Dump;

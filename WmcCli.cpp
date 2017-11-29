@@ -9,6 +9,7 @@
 #include "WmcCli.h"
 #include "eep_cfg.h"
 #include <EEPROM.h>
+#include <stdio.h>
 
 /***********************************************************************************************************************
    D A T A   D E C L A R A T I O N S (exported, local)
@@ -18,6 +19,8 @@ const char* WmcCli::LocDelete = "del ";
 const char* WmcCli::LocChange = "change ";
 const char* WmcCli::Ssid      = "ssid ";
 const char* WmcCli::Password  = "password ";
+const char* WmcCli::IpAdrress = "ip ";
+const char* WmcCli::Network   = "network";
 const char* WmcCli::Help      = "help";
 const char* WmcCli::LocList   = "list";
 const char* WmcCli::Dump      = "dump";
@@ -112,6 +115,16 @@ void WmcCli::Process(void)
         // Write SSID password to EEPROM
         SsIdWritePassword();
     }
+    else if (strncmp(m_bufferRx, IpAdrress, strlen(IpAdrress)) == 0)
+    {
+        // Write ip address to connect to.
+        IpAddressWrite();
+    }
+    else if (strncmp(m_bufferRx, Network, strlen(Network)) == 0)
+    {
+        // Write ip address to connect to.
+        ShowNetworkSettings();
+    }
     else if (strncmp(m_bufferRx, LocList, strlen(LocList)) == 0)
     {
         ListAllLocs();
@@ -137,6 +150,8 @@ void WmcCli::HelpScreen(void)
     Serial.println("dump         : Dump data for backup.");
     Serial.println("ssid <>      : Set SSID name (Wifi) to connect to.");
     Serial.println("password <>  : Set password (Wifi).");
+    Serial.println("ip a.b.c.d   : Set IP address of Z21 control.");
+    Serial.println("network      : Show programmed IP and network settings.");
     Serial.println("help         : This screen.");
 }
 
@@ -167,6 +182,64 @@ void WmcCli::SsIdWritePassword(void)
     Serial.print(m_SsidPassword);
     Serial.println(" stored.");
 }
+
+/***********************************************************************************************************************
+ */
+void WmcCli::IpAddressWrite(void)
+{
+    char* Dot;
+    uint8_t Index;
+
+    /* s(s)canf not present, so get digits by locating the dot and getting value from the dot location. */
+    m_IpAddress[0] = atoi(&m_bufferRx[strlen(IpAdrress)]);
+    Dot            = &m_bufferRx[strlen(IpAdrress)];
+
+    for (Index = 0; Index < 3; Index++)
+    {
+        Dot = strchr(Dot, '.');
+        Dot++;
+        m_IpAddress[1 + Index] = atoi(Dot);
+    }
+
+    EEPROM.put(EepCfg::EepIpAddress, m_IpAddress);
+    EEPROM.commit();
+
+    Serial.print("IP Address stored : ");
+    Serial.print(m_IpAddress[0]);
+    Serial.print(".");
+    Serial.print(m_IpAddress[1]);
+    Serial.print(".");
+    Serial.print(m_IpAddress[2]);
+    Serial.print(".");
+    Serial.println(m_IpAddress[3]);
+}
+
+/***********************************************************************************************************************
+ */
+void WmcCli::ShowNetworkSettings(void)
+{
+    memset(m_IpAddress, 0, 4);
+    memset(m_SsidName, '\0', sizeof(m_SsidName));
+    memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
+    EEPROM.get(EepCfg::SsidAddress, m_SsidName);
+    Serial.print(Ssid);
+    Serial.println(m_SsidName);
+
+    EEPROM.get(EepCfg::SsidPasswordAddress, m_SsidPassword);
+    Serial.print(Password);
+    Serial.println(m_SsidPassword);
+
+    EEPROM.get(EepCfg::EepIpAddress, m_IpAddress);
+    Serial.print(IpAdrress);
+    Serial.print(m_IpAddress[0]);
+    Serial.print(".");
+    Serial.print(m_IpAddress[1]);
+    Serial.print(".");
+    Serial.print(m_IpAddress[2]);
+    Serial.print(".");
+    Serial.println(m_IpAddress[3]);
+}
+
 /***********************************************************************************************************************
  */
 void WmcCli::Add(void)
@@ -337,13 +410,5 @@ void WmcCli::DumpData(void)
         Index++;
     }
 
-    memset(m_SsidName, '\0', sizeof(m_SsidName));
-    memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
-    EEPROM.get(EepCfg::SsidAddress, m_SsidName);
-    Serial.print(Ssid);
-    Serial.println(m_SsidName);
-
-    EEPROM.get(EepCfg::SsidPasswordAddress, m_SsidPassword);
-    Serial.print(Password);
-    Serial.println(m_SsidPassword);
+    ShowNetworkSettings();
 }
