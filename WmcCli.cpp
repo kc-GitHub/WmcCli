@@ -49,7 +49,7 @@ void WmcCli::Init()
 }
 
 /***********************************************************************************************************************
- * Read data from serial port, if CR is received check the received data and perform action if valif command is
+ * Read data from serial port, if CR is received check the received data and perform action if valid command is
  * received.
  */
 void WmcCli::Update(void)
@@ -274,7 +274,7 @@ void WmcCli::Add(void)
  */
 void WmcCli::Delete(void)
 {
-    m_Address = atoi(&m_bufferRx[strlen(LocAdd)]);
+    m_Address = atoi(&m_bufferRx[strlen(LocDelete)]);
 
     if (m_locLib.RemoveLoc(m_Address) == true)
     {
