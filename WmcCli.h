@@ -92,6 +92,11 @@ private:
     void ListAllLocs(void);
 
     /**
+     * Set control type, normal or AC.
+     */
+    void AcControlType(void);
+
+    /**
      * Dump data for backup.
      */
     void DumpData(void);
@@ -110,8 +115,8 @@ private:
     uint16_t m_Function;
     uint16_t m_Button;
     char m_NameStr[10];
-    char m_SsidName[50];
-    char m_SsidPassword[50];
+    char m_SsidName[40];
+    char m_SsidPassword[40];
     uint8_t m_IpAddress[4];
 
     static const char* LocAdd;
@@ -123,6 +128,7 @@ private:
     static const char* Network;
     static const char* Help;
     static const char* LocList;
+    static const char* Ac;
     static const char* Dump;
 };
 

@@ -23,6 +23,7 @@ const char* WmcCli::IpAdrress = "ip ";
 const char* WmcCli::Network   = "network";
 const char* WmcCli::Help      = "help";
 const char* WmcCli::LocList   = "list";
+const char* WmcCli::Ac        = "ac";
 const char* WmcCli::Dump      = "dump";
 
 /***********************************************************************************************************************
@@ -133,6 +134,10 @@ void WmcCli::Process(void)
     {
         DumpData();
     }
+    else if (strncmp(m_bufferRx, Ac, strlen(Ac)) == 0)
+    {
+        AcControlType();
+    }
     else
     {
         Serial.println("Unknown command.");
@@ -152,6 +157,7 @@ void WmcCli::HelpScreen(void)
     Serial.println("password <>  : Set password (Wifi).");
     Serial.println("ip a.b.c.d   : Set IP address of Z21 control.");
     Serial.println("network      : Show programmed IP and network settings.");
+    Serial.println("ac           : Enable / disable AC control option.");
     Serial.println("help         : This screen.");
 }
 
@@ -248,7 +254,7 @@ void WmcCli::Add(void)
 
     m_Address = atoi(&m_bufferRx[strlen(LocAdd)]);
 
-    if ((m_Address > 0) && (m_Address < 9999))
+    if ((m_Address > 0) && (m_Address <= 9999))
     {
         /* Add loc, default functions 0..4 */
         if (m_locLib.StoreLoc(m_Address, Functions, LocLib::storeAdd) == true)
@@ -385,6 +391,36 @@ void WmcCli::ListAllLocs(void)
 
 /***********************************************************************************************************************
  */
+void WmcCli::AcControlType(void)
+{
+    uint8_t AcOption;
+    char* Space;
+
+    Space = strchr(m_bufferRx, 32);
+    Space++;
+
+    AcOption = atoi(Space);
+
+    switch (AcOption)
+    {
+    case 0:
+        AcOption = 0;
+        Serial.println("AC option disabled.");
+        EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
+        EEPROM.commit();
+        break;
+    case 1:
+        AcOption = 1;
+        Serial.println("AC option enabled.");
+        EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
+        EEPROM.commit();
+        break;
+    default: Serial.println("AC option entry invalid."); break;
+    }
+}
+
+/***********************************************************************************************************************
+ */
 void WmcCli::DumpData(void)
 {
     uint8_t Index = 0;
@@ -411,4 +447,9 @@ void WmcCli::DumpData(void)
     }
 
     ShowNetworkSettings();
+
+    /* Dump the AC option. */
+    Serial.print(Ac);
+    Serial.print(" ");
+    Serial.println(EEPROM.read(EepCfg::EepCfg::AcTypeControlAddress));
 }
