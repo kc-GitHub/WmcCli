@@ -397,25 +397,33 @@ void WmcCli::AcControlType(void)
     char* Space;
 
     Space = strchr(m_bufferRx, 32);
-    Space++;
 
-    AcOption = atoi(Space);
-
-    switch (AcOption)
+    if (Space != NULL)
     {
-    case 0:
-        AcOption = 0;
-        Serial.println("AC option disabled.");
-        EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
-        EEPROM.commit();
-        break;
-    case 1:
-        AcOption = 1;
-        Serial.println("AC option enabled.");
-        EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
-        EEPROM.commit();
-        break;
-    default: Serial.println("AC option entry invalid."); break;
+        Space++;
+
+        AcOption = atoi(Space);
+
+        switch (AcOption)
+        {
+        case 0:
+            AcOption = 0;
+            EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
+            EEPROM.commit();
+            Serial.println("AC option disabled.");
+            break;
+        case 1:
+            AcOption = 1;
+            EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
+            EEPROM.commit();
+            Serial.println("AC option enabled.");
+            break;
+        default: Serial.println("AC option entry invalid."); break;
+        }
+    }
+    else
+    {
+        Serial.println("AC option entry invalid, must be ac 0 or ac 1");
     }
 }
 
