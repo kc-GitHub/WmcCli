@@ -8,6 +8,7 @@
  **********************************************************************************************************************/
 #include "WmcCli.h"
 #include "eep_cfg.h"
+#include "fsmlist.hpp"
 #include <EEPROM.h>
 #include <stdio.h>
 
@@ -96,30 +97,42 @@ void WmcCli::Process(void)
     }
     else if (strncmp(m_bufferRx, LocAdd, strlen(LocAdd)) == 0)
     {
-        Add();
+        if (Add() == true)
+        {
+            send_event(Event);
+        }
     }
     else if (strncmp(m_bufferRx, LocDelete, strlen(LocDelete)) == 0)
     {
-        Delete();
+        if (Delete() == true)
+        {
+            send_event(Event);
+        }
     }
     else if (strncmp(m_bufferRx, LocChange, strlen(LocChange)) == 0)
     {
-        Change();
+        if (Change() == true)
+        {
+            send_event(Event);
+        }
     }
     else if (strncmp(m_bufferRx, Ssid, strlen(Ssid)) == 0)
     {
         // Write SSID name to EEPROM
         SsIdWriteName();
+        send_event(Event);
     }
     else if (strncmp(m_bufferRx, Password, strlen(Password)) == 0)
     {
         // Write SSID password to EEPROM
         SsIdWritePassword();
+        send_event(Event);
     }
     else if (strncmp(m_bufferRx, IpAdrress, strlen(IpAdrress)) == 0)
     {
         // Write ip address to connect to.
         IpAddressWrite();
+        send_event(Event);
     }
     else if (strncmp(m_bufferRx, Network, strlen(Network)) == 0)
     {
@@ -136,7 +149,10 @@ void WmcCli::Process(void)
     }
     else if (strncmp(m_bufferRx, Ac, strlen(Ac)) == 0)
     {
-        AcControlType();
+        if (AcControlType() == true)
+        {
+            send_event(Event);
+        }
     }
     else
     {
@@ -224,9 +240,11 @@ void WmcCli::IpAddressWrite(void)
  */
 void WmcCli::ShowNetworkSettings(void)
 {
-    memset(m_IpAddress, 0, 4);
+    memset(m_IpAddress, 0, sizeof(m_IpAddress));
     memset(m_SsidName, '\0', sizeof(m_SsidName));
     memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
+
+    /* Get and print the network settings. */
     EEPROM.get(EepCfg::SsidAddress, m_SsidName);
     Serial.print(Ssid);
     Serial.println(m_SsidName);
@@ -248,9 +266,10 @@ void WmcCli::ShowNetworkSettings(void)
 
 /***********************************************************************************************************************
  */
-void WmcCli::Add(void)
+bool WmcCli::Add(void)
 {
     uint8_t Functions[5] = { 0, 1, 2, 3, 4 };
+    bool Result          = false;
 
     m_Address = atoi(&m_bufferRx[strlen(LocAdd)]);
 
@@ -264,6 +283,7 @@ void WmcCli::Add(void)
             Serial.print(m_Address);
             Serial.println(" added.");
             m_wmcTft.UpdateSelectedAndNumberOfLocs(m_locLib.GetActualSelectedLocIndex(), m_locLib.GetNumberOfLocs());
+            Result = true;
         }
         else
         {
@@ -274,13 +294,16 @@ void WmcCli::Add(void)
     {
         Serial.println("Loc add command not ok.!");
     }
+
+    return (Result);
 }
 
 /***********************************************************************************************************************
  */
-void WmcCli::Delete(void)
+bool WmcCli::Delete(void)
 {
-    m_Address = atoi(&m_bufferRx[strlen(LocDelete)]);
+    m_Address   = atoi(&m_bufferRx[strlen(LocDelete)]);
+    bool Result = false;
 
     if (m_locLib.RemoveLoc(m_Address) == true)
     {
@@ -288,19 +311,23 @@ void WmcCli::Delete(void)
         Serial.print(m_Address);
         Serial.println(" deleted.");
         m_wmcTft.UpdateSelectedAndNumberOfLocs(m_locLib.GetActualSelectedLocIndex(), m_locLib.GetNumberOfLocs());
+        Result = true;
     }
     else
     {
         Serial.println("Loc delete failed!");
     }
+
+    return (Result);
 }
 
 /***********************************************************************************************************************
  */
-void WmcCli::Change(void)
+bool WmcCli::Change(void)
 {
     char* Space;
     uint8_t FunctionAssignment[5];
+    bool Result = false;
 
     Space = strchr(m_bufferRx, 32);
     Space++;
@@ -331,6 +358,7 @@ void WmcCli::Change(void)
                         FunctionAssignment[m_Button] = m_Function;
                         m_locLib.StoreLoc(m_Address, FunctionAssignment, LocLib::storeChange);
                         Serial.println("Loc function updated.");
+                        Result = true;
                     }
                     else
                     {
@@ -358,6 +386,8 @@ void WmcCli::Change(void)
     {
         Serial.println("Command invalid.");
     }
+
+    return (Result);
 }
 
 /***********************************************************************************************************************
@@ -391,10 +421,11 @@ void WmcCli::ListAllLocs(void)
 
 /***********************************************************************************************************************
  */
-void WmcCli::AcControlType(void)
+bool WmcCli::AcControlType(void)
 {
     uint8_t AcOption;
     char* Space;
+    bool Result = false;
 
     Space = strchr(m_bufferRx, 32);
 
@@ -411,12 +442,14 @@ void WmcCli::AcControlType(void)
             EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
             EEPROM.commit();
             Serial.println("AC option disabled.");
+            Result = true;
             break;
         case 1:
             AcOption = 1;
             EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
             EEPROM.commit();
             Serial.println("AC option enabled.");
+            Result = true;
             break;
         default: Serial.println("AC option entry invalid."); break;
         }
@@ -425,6 +458,8 @@ void WmcCli::AcControlType(void)
     {
         Serial.println("AC option entry invalid, must be ac 0 or ac 1");
     }
+
+    return (Result);
 }
 
 /***********************************************************************************************************************

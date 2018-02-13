@@ -15,6 +15,7 @@
 #include "Loclib.h"
 #include "WmcCli.h"
 #include "WmcTft.h"
+#include "wmc_app.h"
 #include <Arduino.h>
 
 /***********************************************************************************************************************
@@ -74,17 +75,17 @@ private:
     /**
      * Try to add loc.
      */
-    void Add(void);
+    bool Add(void);
 
     /**
      * Try to delete loc.
      */
-    void Delete(void);
+    bool Delete(void);
 
     /**
      * Change loc data (function assignment).
      */
-    void Change(void);
+    bool Change(void);
 
     /**
      * List programmed locs.
@@ -94,7 +95,7 @@ private:
     /**
      * Set control type, normal or AC.
      */
-    void AcControlType(void);
+    bool AcControlType(void);
 
     /**
      * Dump data for backup.
@@ -130,6 +131,8 @@ private:
     static const char* LocList;
     static const char* Ac;
     static const char* Dump;
+
+    cliEnterEvent Event;
 };
 
 #endif
