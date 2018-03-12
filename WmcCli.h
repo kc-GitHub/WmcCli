@@ -102,6 +102,11 @@ private:
      */
     void DumpData(void);
 
+    /**
+     * Show overview of settings.
+     */
+    void ShowSettings(void);
+
     LocLib m_locLib;
 
     WmcTft m_wmcTft;
@@ -131,6 +136,7 @@ private:
     static const char* LocList;
     static const char* Ac;
     static const char* Dump;
+    static const char* Settings;
 
     cliEnterEvent Event;
 };

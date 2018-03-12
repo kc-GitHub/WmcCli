@@ -26,7 +26,7 @@ const char* WmcCli::Help      = "help";
 const char* WmcCli::LocList   = "list";
 const char* WmcCli::Ac        = "ac";
 const char* WmcCli::Dump      = "dump";
-
+const char* WmcCli::Settings  = "settings";
 /***********************************************************************************************************************
    F U N C T I O N S
  **********************************************************************************************************************/
@@ -147,6 +147,10 @@ void WmcCli::Process(void)
     {
         DumpData();
     }
+    else if (strncmp(m_bufferRx, Settings, strlen(Settings)) == 0)
+    {
+        ShowSettings();
+    }
     else if (strncmp(m_bufferRx, Ac, strlen(Ac)) == 0)
     {
         if (AcControlType() == true)
@@ -174,6 +178,7 @@ void WmcCli::HelpScreen(void)
     Serial.println("ip a.b.c.d   : Set IP address of Z21 control.");
     Serial.println("network      : Show programmed IP and network settings.");
     Serial.println("ac           : Enable / disable AC control option.");
+    Serial.println("settings     : Show overview of settings.");
     Serial.println("help         : This screen.");
 }
 
@@ -495,4 +500,45 @@ void WmcCli::DumpData(void)
     Serial.print(Ac);
     Serial.print(" ");
     Serial.println(EEPROM.read(EepCfg::EepCfg::AcTypeControlAddress));
+}
+
+/***********************************************************************************************************************
+ */
+void WmcCli::ShowSettings(void)
+{
+    memset(m_IpAddress, 0, sizeof(m_IpAddress));
+    memset(m_SsidName, '\0', sizeof(m_SsidName));
+    memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
+
+    Serial.print("Number of locs  : ");
+    Serial.println(m_locLib.GetNumberOfLocs());
+
+    Serial.print("Ac control      : ");
+    if (EEPROM.read(EepCfg::EepCfg::AcTypeControlAddress) == 1)
+    {
+        Serial.println("On.");
+    }
+    else
+    {
+        Serial.println("Off.");
+    }
+
+    /* Get and print the network settings. */
+    EEPROM.get(EepCfg::SsidAddress, m_SsidName);
+    Serial.print("Ssid            : ");
+    Serial.println(m_SsidName);
+
+    EEPROM.get(EepCfg::SsidPasswordAddress, m_SsidPassword);
+    Serial.print("Password        : ");
+    Serial.println(m_SsidPassword);
+
+    EEPROM.get(EepCfg::EepIpAddress, m_IpAddress);
+    Serial.print("Ip address Z21  : ");
+    Serial.print(m_IpAddress[0]);
+    Serial.print(".");
+    Serial.print(m_IpAddress[1]);
+    Serial.print(".");
+    Serial.print(m_IpAddress[2]);
+    Serial.print(".");
+    Serial.println(m_IpAddress[3]);
 }
