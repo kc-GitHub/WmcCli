@@ -65,7 +65,7 @@ private:
     /**
      * Write IP address to connect to.
      */
-    void IpAddressWrite(void);
+    bool IpAddressWriteZ21(void);
 
     /**
      * Show programmed IP settings.
@@ -98,6 +98,26 @@ private:
     bool AcControlType(void);
 
     /**
+     * Toggle between static and dynamic ip address.
+     */
+    bool StaticIpChange(void);
+
+    /**
+     * Write fixed (static) IP address of WMC.
+     */
+    bool IpAddressWriteWmc(void);
+
+    /**
+     * Write IP gateway of WMC.
+     */
+    bool IpAddressWriteGateway(void);
+
+    /**
+     * Write IP subnet of WMC.
+     */
+    bool IpAddressWriteSubnet(void);
+
+    /**
      * Dump data for backup.
      */
     void DumpData(void);
@@ -106,6 +126,16 @@ private:
      * Show overview of settings.
      */
     void ShowSettings(void);
+
+    /**
+     * Retrieve Ip data from string.
+     */
+    bool IpGetData(const char* SourcePtr, uint8_t* TargetPtr);
+
+    /**
+     * Print ip data.
+     */
+    void IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr);
 
     LocLib m_locLib;
 
@@ -123,19 +153,26 @@ private:
     char m_NameStr[10];
     char m_SsidName[40];
     char m_SsidPassword[40];
-    uint8_t m_IpAddress[4];
+    uint8_t m_IpAddressZ21[4];
+    uint8_t m_IpAddresWmc[4];
+    uint8_t m_IpGateway[4];
+    uint8_t m_IpSubnet[4];
 
     static const char* LocAdd;
     static const char* LocDelete;
     static const char* LocChange;
     static const char* Ssid;
     static const char* Password;
-    static const char* IpAdrress;
+    static const char* IpAdrressZ21;
     static const char* Network;
+    static const char* Ip;
+    static const char* Gateway;
+    static const char* Subnet;
     static const char* Help;
     static const char* LocList;
     static const char* Ac;
     static const char* Dump;
+    static const char* StaticIp;
     static const char* Settings;
 
     cliEnterEvent Event;

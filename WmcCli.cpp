@@ -15,18 +15,22 @@
 /***********************************************************************************************************************
    D A T A   D E C L A R A T I O N S (exported, local)
  **********************************************************************************************************************/
-const char* WmcCli::LocAdd    = "add";
-const char* WmcCli::LocDelete = "del ";
-const char* WmcCli::LocChange = "change ";
-const char* WmcCli::Ssid      = "ssid ";
-const char* WmcCli::Password  = "password ";
-const char* WmcCli::IpAdrress = "ip ";
-const char* WmcCli::Network   = "network";
-const char* WmcCli::Help      = "help";
-const char* WmcCli::LocList   = "list";
-const char* WmcCli::Ac        = "ac";
-const char* WmcCli::Dump      = "dump";
-const char* WmcCli::Settings  = "settings";
+const char* WmcCli::LocAdd       = "add";
+const char* WmcCli::LocDelete    = "del ";
+const char* WmcCli::LocChange    = "change ";
+const char* WmcCli::Ssid         = "ssid ";
+const char* WmcCli::Password     = "password ";
+const char* WmcCli::IpAdrressZ21 = "z21";
+const char* WmcCli::Ip           = "ip";
+const char* WmcCli::Gateway      = "gateway";
+const char* WmcCli::Subnet       = "subnet";
+const char* WmcCli::Network      = "network";
+const char* WmcCli::Help         = "help";
+const char* WmcCli::LocList      = "list";
+const char* WmcCli::Ac           = "ac";
+const char* WmcCli::Dump         = "dump";
+const char* WmcCli::StaticIp     = "static";
+const char* WmcCli::Settings     = "settings";
 /***********************************************************************************************************************
    F U N C T I O N S
  **********************************************************************************************************************/
@@ -118,25 +122,23 @@ void WmcCli::Process(void)
     }
     else if (strncmp(m_bufferRx, Ssid, strlen(Ssid)) == 0)
     {
-        // Write SSID name to EEPROM
         SsIdWriteName();
         send_event(Event);
     }
     else if (strncmp(m_bufferRx, Password, strlen(Password)) == 0)
     {
-        // Write SSID password to EEPROM
         SsIdWritePassword();
         send_event(Event);
     }
-    else if (strncmp(m_bufferRx, IpAdrress, strlen(IpAdrress)) == 0)
+    else if (strncmp(m_bufferRx, IpAdrressZ21, strlen(IpAdrressZ21)) == 0)
     {
-        // Write ip address to connect to.
-        IpAddressWrite();
-        send_event(Event);
+        if (IpAddressWriteZ21() == true)
+        {
+            send_event(Event);
+        }
     }
     else if (strncmp(m_bufferRx, Network, strlen(Network)) == 0)
     {
-        // Write ip address to connect to.
         ShowNetworkSettings();
     }
     else if (strncmp(m_bufferRx, LocList, strlen(LocList)) == 0)
@@ -158,6 +160,34 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+    else if (strncmp(m_bufferRx, StaticIp, strlen(StaticIp)) == 0)
+    {
+        if (StaticIpChange() == true)
+        {
+            send_event(Event);
+        }
+    }
+    else if (strncmp(m_bufferRx, Ip, strlen(Ip)) == 0)
+    {
+        if (IpAddressWriteWmc() == true)
+        {
+            send_event(Event);
+        }
+    }
+    else if (strncmp(m_bufferRx, Gateway, strlen(Gateway)) == 0)
+    {
+        if (IpAddressWriteGateway() == true)
+        {
+            send_event(Event);
+        }
+    }
+    else if (strncmp(m_bufferRx, Subnet, strlen(Subnet)) == 0)
+    {
+        if (IpAddressWriteSubnet() == true)
+        {
+            send_event(Event);
+        }
+    }
     else
     {
         Serial.println("Unknown command.");
@@ -168,18 +198,21 @@ void WmcCli::Process(void)
  */
 void WmcCli::HelpScreen(void)
 {
-    Serial.println("add x        : Add loc with address x");
-    Serial.println("del x        : Delete loc with address x");
-    Serial.println("change x y z : Assign function z to button y of loc with address x.");
-    Serial.println("list         : Show all programmed locs.");
-    Serial.println("dump         : Dump data for backup.");
-    Serial.println("ssid <>      : Set SSID name (Wifi) to connect to.");
-    Serial.println("password <>  : Set password (Wifi).");
-    Serial.println("ip a.b.c.d   : Set IP address of Z21 control.");
-    Serial.println("network      : Show programmed IP and network settings.");
-    Serial.println("ac           : Enable / disable AC control option.");
-    Serial.println("settings     : Show overview of settings.");
-    Serial.println("help         : This screen.");
+    Serial.println("add x           : Add loc with address x");
+    Serial.println("del x           : Delete loc with address x");
+    Serial.println("change x y z    : Assign function z to button y of loc with address x.");
+    Serial.println("list            : Show all programmed locs.");
+    Serial.println("dump            : Dump data for backup.");
+    Serial.println("ssid <>         : Set SSID name (Wifi) to connect to.");
+    Serial.println("password <>     : Set password (Wifi).");
+    Serial.println("z21 a.b.c.d     : Set IP address of Z21 control.");
+    Serial.println("static x        : Change between DHCP (x=0) and fixed IP address (x=1) of WMC");
+    Serial.println("ip a.b.c.d      : IP address of WMC when static is active");
+    Serial.println("gateway a.b.c.d : IP gateway to connect to when static is active");
+    Serial.println("subnet a.b.c.d  : IP subnet to connect to when static is active");
+    Serial.println("ac x            : Enable (x=1) / disable (x=0) AC control option.");
+    Serial.println("settings        : Show overview of settings.");
+    Serial.println("help            : This screen.");
 }
 
 /***********************************************************************************************************************
@@ -212,40 +245,42 @@ void WmcCli::SsIdWritePassword(void)
 
 /***********************************************************************************************************************
  */
-void WmcCli::IpAddressWrite(void)
+bool WmcCli::IpAddressWriteZ21(void)
 {
-    char* Dot;
-    uint8_t Index;
+    bool Result = true;
 
-    /* s(s)canf not present, so get digits by locating the dot and getting value from the dot location. */
-    m_IpAddress[0] = atoi(&m_bufferRx[strlen(IpAdrress)]);
-    Dot            = &m_bufferRx[strlen(IpAdrress)];
-
-    for (Index = 0; Index < 3; Index++)
+    if (IpGetData(IpAdrressZ21, m_IpAddressZ21) == true)
     {
-        Dot = strchr(Dot, '.');
-        Dot++;
-        m_IpAddress[1 + Index] = atoi(Dot);
+        EEPROM.put(EepCfg::EepIpAddressZ21, m_IpAddressZ21);
+        EEPROM.commit();
+
+        Serial.print("IP Address Z21 stored : ");
+        Serial.print(m_IpAddressZ21[0]);
+        Serial.print(".");
+        Serial.print(m_IpAddressZ21[1]);
+        Serial.print(".");
+        Serial.print(m_IpAddressZ21[2]);
+        Serial.print(".");
+        Serial.println(m_IpAddressZ21[3]);
+    }
+    else
+    {
+        Result = false;
+        Serial.println("IP Address Z21 entry invalid!");
     }
 
-    EEPROM.put(EepCfg::EepIpAddress, m_IpAddress);
-    EEPROM.commit();
-
-    Serial.print("IP Address stored : ");
-    Serial.print(m_IpAddress[0]);
-    Serial.print(".");
-    Serial.print(m_IpAddress[1]);
-    Serial.print(".");
-    Serial.print(m_IpAddress[2]);
-    Serial.print(".");
-    Serial.println(m_IpAddress[3]);
+    return (Result);
 }
 
 /***********************************************************************************************************************
  */
 void WmcCli::ShowNetworkSettings(void)
 {
-    memset(m_IpAddress, 0, sizeof(m_IpAddress));
+    uint8_t Static;
+    memset(m_IpSubnet, 0, sizeof(m_IpSubnet));
+    memset(m_IpGateway, 0, sizeof(m_IpGateway));
+    memset(m_IpAddressZ21, 0, sizeof(IpAdrressZ21));
+    memset(m_IpAddresWmc, 0, sizeof(m_IpAddresWmc));
     memset(m_SsidName, '\0', sizeof(m_SsidName));
     memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
 
@@ -258,15 +293,22 @@ void WmcCli::ShowNetworkSettings(void)
     Serial.print(Password);
     Serial.println(m_SsidPassword);
 
-    EEPROM.get(EepCfg::EepIpAddress, m_IpAddress);
-    Serial.print(IpAdrress);
-    Serial.print(m_IpAddress[0]);
-    Serial.print(".");
-    Serial.print(m_IpAddress[1]);
-    Serial.print(".");
-    Serial.print(m_IpAddress[2]);
-    Serial.print(".");
-    Serial.println(m_IpAddress[3]);
+    EEPROM.get(EepCfg::EepIpAddressZ21, m_IpAddressZ21);
+    IpDataPrint(IpAdrressZ21, m_IpAddressZ21);
+
+    EEPROM.get(EepCfg::EepIpAddressWmc, m_IpAddresWmc);
+    IpDataPrint(Ip, m_IpAddresWmc);
+
+    EEPROM.get(EepCfg::EepIpGateway, m_IpGateway);
+    IpDataPrint(Gateway, m_IpGateway);
+
+    EEPROM.get(EepCfg::EepIpSubnet, m_IpSubnet);
+    IpDataPrint(Subnet, m_IpSubnet);
+
+    Static = EEPROM.read(EepCfg::StaticIpAddress);
+    Serial.print(StaticIp);
+    Serial.print(" ");
+    Serial.println(Static);
 }
 
 /***********************************************************************************************************************
@@ -444,14 +486,14 @@ bool WmcCli::AcControlType(void)
         {
         case 0:
             AcOption = 0;
-            EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
+            EEPROM.write(EepCfg::AcTypeControlAddress, AcOption);
             EEPROM.commit();
             Serial.println("AC option disabled.");
             Result = true;
             break;
         case 1:
             AcOption = 1;
-            EEPROM.write(EepCfg::EepCfg::AcTypeControlAddress, AcOption);
+            EEPROM.write(EepCfg::AcTypeControlAddress, AcOption);
             EEPROM.commit();
             Serial.println("AC option enabled.");
             Result = true;
@@ -462,6 +504,131 @@ bool WmcCli::AcControlType(void)
     else
     {
         Serial.println("AC option entry invalid, must be ac 0 or ac 1");
+    }
+
+    return (Result);
+}
+
+/***********************************************************************************************************************
+ */
+bool WmcCli::StaticIpChange(void)
+{
+    uint8_t StaticIp;
+    char* Space;
+    bool Result = false;
+
+    Space = strchr(m_bufferRx, 32);
+
+    if (Space != NULL)
+    {
+        Space++;
+
+        StaticIp = (uint8_t)(atoi(Space));
+
+        switch (StaticIp)
+        {
+        case 0:
+            Result = true;
+            EEPROM.write(EepCfg::StaticIpAddress, StaticIp);
+            EEPROM.commit();
+            Serial.println("Dynamic IP Address WMC disabled.");
+            break;
+        case 1:
+            Result = true;
+            EEPROM.write(EepCfg::StaticIpAddress, StaticIp);
+            EEPROM.commit();
+            Serial.println("Dynamic IP Address WMC enabled.");
+            break;
+        default: Serial.println("Dynamic IP entry invalid"); break;
+        }
+    }
+    else
+    {
+        Serial.println("Dynamic IP entry invalid");
+    }
+
+    return (Result);
+}
+
+/***********************************************************************************************************************
+ */
+bool WmcCli::IpAddressWriteWmc(void)
+{
+    bool Result = true;
+    if (IpGetData(Ip, m_IpAddresWmc) == true)
+    {
+        EEPROM.put(EepCfg::EepIpAddressWmc, m_IpAddresWmc);
+        EEPROM.commit();
+
+        Serial.print("IP Address WMC stored : ");
+        Serial.print(m_IpAddresWmc[0]);
+        Serial.print(".");
+        Serial.print(m_IpAddresWmc[1]);
+        Serial.print(".");
+        Serial.print(m_IpAddresWmc[2]);
+        Serial.print(".");
+        Serial.println(m_IpAddresWmc[3]);
+    }
+    else
+    {
+        Result = false;
+        Serial.println("IP Address WMC entry invalid.");
+    }
+
+    return (Result);
+}
+
+/***********************************************************************************************************************
+ */
+bool WmcCli::IpAddressWriteGateway(void)
+{
+    bool Result = true;
+    if (IpGetData(Gateway, m_IpGateway) == true)
+    {
+        EEPROM.put(EepCfg::EepIpGateway, m_IpGateway);
+        EEPROM.commit();
+
+        Serial.print("IP Gateway stored : ");
+        Serial.print(m_IpGateway[0]);
+        Serial.print(".");
+        Serial.print(m_IpGateway[1]);
+        Serial.print(".");
+        Serial.print(m_IpGateway[2]);
+        Serial.print(".");
+        Serial.println(m_IpGateway[3]);
+    }
+    else
+    {
+        Result = false;
+        Serial.println("IP Gateway entry invalid!");
+    }
+
+    return (Result);
+}
+
+/***********************************************************************************************************************
+ */
+bool WmcCli::IpAddressWriteSubnet(void)
+{
+    bool Result = true;
+    if (IpGetData(Subnet, m_IpSubnet) == true)
+    {
+        EEPROM.put(EepCfg::EepIpSubnet, m_IpSubnet);
+        EEPROM.commit();
+
+        Serial.print("IP Subnet stored : ");
+        Serial.print(m_IpSubnet[0]);
+        Serial.print(".");
+        Serial.print(m_IpSubnet[1]);
+        Serial.print(".");
+        Serial.print(m_IpSubnet[2]);
+        Serial.print(".");
+        Serial.println(m_IpSubnet[3]);
+    }
+    else
+    {
+        Result = false;
+        Serial.println("IP Subnet entry invalid");
     }
 
     return (Result);
@@ -499,14 +666,16 @@ void WmcCli::DumpData(void)
     /* Dump the AC option. */
     Serial.print(Ac);
     Serial.print(" ");
-    Serial.println(EEPROM.read(EepCfg::EepCfg::AcTypeControlAddress));
+    Serial.println(EEPROM.read(EepCfg::AcTypeControlAddress));
 }
 
 /***********************************************************************************************************************
  */
 void WmcCli::ShowSettings(void)
 {
-    memset(m_IpAddress, 0, sizeof(m_IpAddress));
+    uint8_t Static;
+
+    memset(m_IpAddressZ21, 0, sizeof(m_IpAddressZ21));
     memset(m_SsidName, '\0', sizeof(m_SsidName));
     memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
 
@@ -514,7 +683,7 @@ void WmcCli::ShowSettings(void)
     Serial.println(m_locLib.GetNumberOfLocs());
 
     Serial.print("Ac control      : ");
-    if (EEPROM.read(EepCfg::EepCfg::AcTypeControlAddress) == 1)
+    if (EEPROM.read(EepCfg::AcTypeControlAddress) == 1)
     {
         Serial.println("On.");
     }
@@ -532,13 +701,71 @@ void WmcCli::ShowSettings(void)
     Serial.print("Password        : ");
     Serial.println(m_SsidPassword);
 
-    EEPROM.get(EepCfg::EepIpAddress, m_IpAddress);
-    Serial.print("Ip address Z21  : ");
-    Serial.print(m_IpAddress[0]);
+    EEPROM.get(EepCfg::EepIpAddressZ21, m_IpAddressZ21);
+    IpDataPrint("Ip address Z21  : ", m_IpAddressZ21);
+
+    Static = EEPROM.read(EepCfg::StaticIpAddress);
+    if (Static == 1)
+    {
+        Serial.println("Static IP       : Enabled.");
+
+        EEPROM.get(EepCfg::EepIpAddressWmc, m_IpAddresWmc);
+        IpDataPrint("Ip address WMC  : ", m_IpAddresWmc);
+
+        EEPROM.get(EepCfg::EepIpGateway, m_IpGateway);
+        IpDataPrint("Ip gateway      : ", m_IpGateway);
+
+        EEPROM.get(EepCfg::EepIpSubnet, m_IpSubnet);
+        IpDataPrint("Ip subnet       : ", m_IpSubnet);
+    }
+    else
+    {
+        Serial.println("Static IP       : Disabled.");
+    }
+}
+
+/***********************************************************************************************************************
+ */
+bool WmcCli::IpGetData(const char* SourcePtr, uint8_t* TargetPtr)
+{
+    char* Dot;
+    bool Result   = true;
+    uint8_t Index = 0;
+
+    /* s(s)canf is not present, so get digits by locating the dot and getting value from the dot location with
+     * atoi function. */
+
+    TargetPtr[0] = atoi(&m_bufferRx[strlen(SourcePtr)]);
+    Dot          = &m_bufferRx[strlen(SourcePtr)];
+
+    while ((Index < 3) && (Dot != NULL))
+    {
+        Dot = strchr(Dot, '.');
+        if (Dot != NULL)
+        {
+            Dot++;
+            TargetPtr[1 + Index] = atoi(Dot);
+            Index++;
+        }
+        else
+        {
+            Result = false;
+        }
+    }
+
+    return (Result);
+}
+
+/***********************************************************************************************************************
+ */
+void WmcCli::IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr)
+{
+    Serial.print(StrPtr);
+    Serial.print(IpDataPtr[0]);
     Serial.print(".");
-    Serial.print(m_IpAddress[1]);
+    Serial.print(IpDataPtr[1]);
     Serial.print(".");
-    Serial.print(m_IpAddress[2]);
+    Serial.print(IpDataPtr[2]);
     Serial.print(".");
-    Serial.println(m_IpAddress[3]);
+    Serial.println(IpDataPtr[3]);
 }
