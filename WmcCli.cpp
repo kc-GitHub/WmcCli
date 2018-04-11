@@ -18,6 +18,7 @@
 const char* WmcCli::LocAdd       = "add";
 const char* WmcCli::LocDelete    = "del ";
 const char* WmcCli::LocChange    = "change ";
+const char* WmcCli::LocDeleteAll = "clear";
 const char* WmcCli::Ssid         = "ssid ";
 const char* WmcCli::Password     = "password ";
 const char* WmcCli::IpAdrressZ21 = "z21";
@@ -114,6 +115,12 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+    else if (strncmp(m_bufferRx, LocDeleteAll, strlen(LocDeleteAll)) == 0)
+    {
+        m_locLib.InitialLocStore();
+        Serial.println("All locs cleared.");
+        send_event(Event);
+    }
     else if (strncmp(m_bufferRx, LocChange, strlen(LocChange)) == 0)
     {
         if (Change() == true)
@@ -201,6 +208,7 @@ void WmcCli::HelpScreen(void)
 {
     Serial.println("add x           : Add loc with address x");
     Serial.println("del x           : Delete loc with address x");
+    Serial.println("clear           : Delete ALL locs");
     Serial.println("change x y z    : Assign function z to button y of loc with address x.");
     Serial.println("list            : Show all programmed locs.");
     Serial.println("dump            : Dump data for backup.");

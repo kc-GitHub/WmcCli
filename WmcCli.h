@@ -161,6 +161,7 @@ private:
     static const char* LocAdd;
     static const char* LocDelete;
     static const char* LocChange;
+    static const char* LocDeleteAll;
     static const char* Ssid;
     static const char* Password;
     static const char* IpAdrressZ21;
