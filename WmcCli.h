@@ -137,13 +137,13 @@ private:
      */
     void IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr);
 
-    LocLib m_locLib;
-
-    WmcTft m_wmcTft;
-
     /**
-     * Receive buffer.
+     * Default IP settings.
      */
+    void IpSettingsDefault(void);
+
+    LocLib m_locLib;
+    WmcTft m_wmcTft;
     char m_bufferRx[40];
     uint16_t m_bufferRxIndex;
     uint16_t m_Address;
@@ -162,6 +162,7 @@ private:
     static const char* LocDelete;
     static const char* LocChange;
     static const char* LocDeleteAll;
+    static const char* EraseAll;
     static const char* Ssid;
     static const char* Password;
     static const char* IpAdrressZ21;

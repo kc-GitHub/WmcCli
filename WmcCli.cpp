@@ -19,6 +19,7 @@ const char* WmcCli::LocAdd       = "add";
 const char* WmcCli::LocDelete    = "del ";
 const char* WmcCli::LocChange    = "change ";
 const char* WmcCli::LocDeleteAll = "clear";
+const char* WmcCli::EraseAll     = "erase";
 const char* WmcCli::Ssid         = "ssid ";
 const char* WmcCli::Password     = "password ";
 const char* WmcCli::IpAdrressZ21 = "z21";
@@ -121,6 +122,18 @@ void WmcCli::Process(void)
         Serial.println("All locs cleared.");
         send_event(Event);
     }
+    else if (strncmp(m_bufferRx, EraseAll, strlen(EraseAll)) == 0)
+    {
+        m_locLib.InitialLocStore();
+        IpSettingsDefault();
+
+        EEPROM.write(EepCfg::AcTypeControlAddress, 0);
+        EEPROM.commit();
+
+        Serial.println("All data cleared.");
+        send_event(Event);
+    }
+
     else if (strncmp(m_bufferRx, LocChange, strlen(LocChange)) == 0)
     {
         if (Change() == true)
@@ -206,19 +219,20 @@ void WmcCli::Process(void)
  */
 void WmcCli::HelpScreen(void)
 {
-    Serial.println("add x           : Add loc with address x");
-    Serial.println("del x           : Delete loc with address x");
-    Serial.println("clear           : Delete ALL locs");
+    Serial.println("add x           : Add loc with address x.");
+    Serial.println("del x           : Delete loc with address x.");
+    Serial.println("clear           : Delete ALL locs.");
+    Serial.println("erase           : Erase ALL data.");
     Serial.println("change x y z    : Assign function z to button y of loc with address x.");
     Serial.println("list            : Show all programmed locs.");
     Serial.println("dump            : Dump data for backup.");
     Serial.println("ssid <>         : Set SSID name (Wifi) to connect to.");
     Serial.println("password <>     : Set password (Wifi).");
     Serial.println("z21 a.b.c.d     : Set IP address of Z21 control.");
-    Serial.println("static x        : Change between DHCP (x=0) and fixed IP address (x=1) of WMC");
-    Serial.println("ip a.b.c.d      : IP address of WMC when static is active");
-    Serial.println("gateway a.b.c.d : IP gateway to connect to when static is active");
-    Serial.println("subnet a.b.c.d  : IP subnet to connect to when static is active");
+    Serial.println("static x        : Change between DHCP (x=0) and fixed IP address (x=1) of WMC.");
+    Serial.println("ip a.b.c.d      : IP address of WMC when static is active.");
+    Serial.println("gateway a.b.c.d : IP gateway to connect to when static is active.");
+    Serial.println("subnet a.b.c.d  : IP subnet to connect to when static is active.");
     Serial.println("ac x            : Enable (x=1) / disable (x=0) AC control option.");
     Serial.println("settings        : Show overview of settings.");
     Serial.println("help            : This screen.");
@@ -777,4 +791,30 @@ void WmcCli::IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr)
     Serial.print(IpDataPtr[2]);
     Serial.print(".");
     Serial.println(IpDataPtr[3]);
+}
+
+/***********************************************************************************************************************
+ */
+void WmcCli::IpSettingsDefault(void)
+{
+    uint8_t IpAddressZ21[4] = { 192, 168, 2, 112 };
+    uint8_t IpAddressWmc[4] = { 192, 168, 2, 5 };
+    uint8_t m_IpGateway[4]  = { 192, 168, 2, 1 };
+    uint8_t m_IpSubnet[4]   = { 255, 255, 255, 0 };
+    uint8_t ipStatic        = 0;
+
+    memcpy(m_SsidName, "YourSsid", strlen("YourSsid"));
+    EEPROM.put(EepCfg::SsidAddress, m_SsidName);
+
+    memcpy(m_SsidName, "SsidPassword", strlen("SsidPassword"));
+    EEPROM.put(EepCfg::SsidPasswordAddress, m_SsidPassword);
+
+    EEPROM.put(EepCfg::EepIpAddressZ21, IpAddressZ21);
+    EEPROM.put(EepCfg::EepIpAddressWmc, IpAddressWmc);
+    EEPROM.put(EepCfg::EepIpSubnet, m_IpSubnet);
+    EEPROM.put(EepCfg::EepIpGateway, ipStatic);
+
+    EEPROM.write(EepCfg::StaticIpAddress, ipStatic);
+
+    EEPROM.commit();
 }
