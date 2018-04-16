@@ -809,10 +809,10 @@ void WmcCli::IpSettingsDefault(void)
     memcpy(m_SsidName, "SsidPassword", strlen("SsidPassword"));
     EEPROM.put(EepCfg::SsidPasswordAddress, m_SsidPassword);
 
-    EEPROM.put(EepCfg::EepIpAddressZ21, IpAddressZ21);
-    EEPROM.put(EepCfg::EepIpAddressWmc, IpAddressWmc);
     EEPROM.put(EepCfg::EepIpSubnet, m_IpSubnet);
     EEPROM.put(EepCfg::EepIpGateway, m_IpGateway);
+    EEPROM.put(EepCfg::EepIpAddressZ21, IpAddressZ21);
+    EEPROM.put(EepCfg::EepIpAddressWmc, IpAddressWmc);
 
     EEPROM.write(EepCfg::StaticIpAddress, ipStatic);
 
