@@ -812,7 +812,7 @@ void WmcCli::IpSettingsDefault(void)
     EEPROM.put(EepCfg::EepIpAddressZ21, IpAddressZ21);
     EEPROM.put(EepCfg::EepIpAddressWmc, IpAddressWmc);
     EEPROM.put(EepCfg::EepIpSubnet, m_IpSubnet);
-    EEPROM.put(EepCfg::EepIpGateway, ipStatic);
+    EEPROM.put(EepCfg::EepIpGateway, m_IpGateway);
 
     EEPROM.write(EepCfg::StaticIpAddress, ipStatic);
 
