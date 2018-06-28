@@ -7,6 +7,8 @@
    I N C L U D E S
  **********************************************************************************************************************/
 #include "WmcCli.h"
+#include "LoclibData.h"
+#include "app_cfg.h"
 #include "eep_cfg.h"
 #include "fsmlist.hpp"
 #include <EEPROM.h>
@@ -20,6 +22,7 @@ const char* WmcCli::LocDelete    = "del ";
 const char* WmcCli::LocChange    = "change ";
 const char* WmcCli::LocDeleteAll = "clear";
 const char* WmcCli::EraseAll     = "erase";
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
 const char* WmcCli::Ssid         = "ssid ";
 const char* WmcCli::Password     = "password ";
 const char* WmcCli::IpAdrressZ21 = "z21";
@@ -27,12 +30,15 @@ const char* WmcCli::Ip           = "ip";
 const char* WmcCli::Gateway      = "gateway";
 const char* WmcCli::Subnet       = "subnet";
 const char* WmcCli::Network      = "network";
-const char* WmcCli::Help         = "help";
-const char* WmcCli::LocList      = "list";
-const char* WmcCli::Ac           = "ac";
-const char* WmcCli::Dump         = "dump";
-const char* WmcCli::StaticIp     = "static";
-const char* WmcCli::Settings     = "settings";
+#endif
+const char* WmcCli::Help    = "help";
+const char* WmcCli::LocList = "list";
+const char* WmcCli::Ac      = "ac";
+const char* WmcCli::Dump    = "dump";
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
+const char* WmcCli::StaticIp = "static";
+#endif
+const char* WmcCli::Settings = "settings";
 
 /***********************************************************************************************************************
    F U N C T I O N S
@@ -51,10 +57,11 @@ WmcCli::WmcCli()
 
 /***********************************************************************************************************************
  */
-void WmcCli::Init()
+void WmcCli::Init(LocLib LocLib, LocStorage LocStorage)
 {
     Serial.begin(115200);
-    m_locLib.Init();
+    m_locLib     = LocLib;
+    m_LocStorage = LocStorage;
 }
 
 /***********************************************************************************************************************
@@ -125,10 +132,14 @@ void WmcCli::Process(void)
     else if (strncmp(m_bufferRx, EraseAll, strlen(EraseAll)) == 0)
     {
         m_locLib.InitialLocStore();
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
         IpSettingsDefault();
+#endif
 
         EEPROM.write(EepCfg::AcTypeControlAddress, 0);
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
         EEPROM.commit();
+#endif
 
         Serial.println("All data cleared.");
         send_event(Event);
@@ -141,6 +152,7 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     else if (strncmp(m_bufferRx, Ssid, strlen(Ssid)) == 0)
     {
         SsIdWriteName();
@@ -162,6 +174,7 @@ void WmcCli::Process(void)
     {
         ShowNetworkSettings();
     }
+#endif
     else if (strncmp(m_bufferRx, LocList, strlen(LocList)) == 0)
     {
         ListAllLocs();
@@ -181,6 +194,7 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     else if (strncmp(m_bufferRx, StaticIp, strlen(StaticIp)) == 0)
     {
         if (StaticIpChange() == true)
@@ -209,6 +223,7 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+#endif
     else
     {
         Serial.println("Unknown command.");
@@ -226,6 +241,7 @@ void WmcCli::HelpScreen(void)
     Serial.println("change x y z    : Assign function z to button y of loc with address x.");
     Serial.println("list            : Show all programmed locs.");
     Serial.println("dump            : Dump data for backup.");
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     Serial.println("ssid <>         : Set SSID name (Wifi) to connect to.");
     Serial.println("password <>     : Set password (Wifi).");
     Serial.println("z21 a.b.c.d     : Set IP address of Z21 control.");
@@ -233,6 +249,7 @@ void WmcCli::HelpScreen(void)
     Serial.println("ip a.b.c.d      : IP address of WMC when static is active.");
     Serial.println("gateway a.b.c.d : IP gateway to connect to when static is active.");
     Serial.println("subnet a.b.c.d  : IP subnet to connect to when static is active.");
+#endif
     Serial.println("ac x            : Enable (x=1) / disable (x=0) AC control option.");
     Serial.println("settings        : Show overview of settings.");
     Serial.println("help            : This screen.");
@@ -240,6 +257,7 @@ void WmcCli::HelpScreen(void)
 
 /***********************************************************************************************************************
  */
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
 void WmcCli::SsIdWriteName(void)
 {
     memset(m_SsidName, '\0', sizeof(m_SsidName));
@@ -333,6 +351,7 @@ void WmcCli::ShowNetworkSettings(void)
     Serial.print(" ");
     Serial.println(Static);
 }
+#endif
 
 /***********************************************************************************************************************
  */
@@ -352,7 +371,6 @@ bool WmcCli::Add(void)
             Serial.print("Loc with address ");
             Serial.print(m_Address);
             Serial.println(" added.");
-            m_wmcTft.UpdateSelectedAndNumberOfLocs(m_locLib.GetActualSelectedLocIndex(), m_locLib.GetNumberOfLocs());
             Result = true;
         }
         else
@@ -380,7 +398,6 @@ bool WmcCli::Delete(void)
         Serial.print("Loc ");
         Serial.print(m_Address);
         Serial.println(" deleted.");
-        m_wmcTft.UpdateSelectedAndNumberOfLocs(m_locLib.GetActualSelectedLocIndex(), m_locLib.GetNumberOfLocs());
         Result = true;
     }
     else
@@ -465,7 +482,7 @@ bool WmcCli::Change(void)
 void WmcCli::ListAllLocs(void)
 {
     uint8_t Index = 0;
-    LocLib::LocLibData* Data;
+    LocLibData* Data;
     char output[30];
 
     Serial.println("          Functions               Functions               Functions    ");
@@ -508,16 +525,12 @@ bool WmcCli::AcControlType(void)
         switch (AcOption)
         {
         case 0:
-            AcOption = 0;
-            EEPROM.write(EepCfg::AcTypeControlAddress, AcOption);
-            EEPROM.commit();
+            m_LocStorage.AcOptionSet(AcOption);
             Serial.println("AC option disabled.");
             Result = true;
             break;
         case 1:
-            AcOption = 1;
-            EEPROM.write(EepCfg::AcTypeControlAddress, AcOption);
-            EEPROM.commit();
+            m_LocStorage.AcOptionSet(AcOption);
             Serial.println("AC option enabled.");
             Result = true;
             break;
@@ -532,6 +545,7 @@ bool WmcCli::AcControlType(void)
     return (Result);
 }
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
 /***********************************************************************************************************************
  */
 bool WmcCli::StaticIpChange(void)
@@ -656,6 +670,7 @@ bool WmcCli::IpAddressWriteSubnet(void)
 
     return (Result);
 }
+#endif
 
 /***********************************************************************************************************************
  */
@@ -663,7 +678,7 @@ void WmcCli::DumpData(void)
 {
     uint8_t Index = 0;
     uint8_t FunctionIndex;
-    LocLib::LocLibData* Data;
+    LocLibData* Data;
 
     while (Index < m_locLib.GetNumberOfLocs())
     {
@@ -683,8 +698,9 @@ void WmcCli::DumpData(void)
 
         Index++;
     }
-
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     ShowNetworkSettings();
+#endif
 
     /* Dump the AC option. */
     Serial.print(Ac);
@@ -696,17 +712,18 @@ void WmcCli::DumpData(void)
  */
 void WmcCli::ShowSettings(void)
 {
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     uint8_t Static;
-
     memset(m_IpAddressZ21, 0, sizeof(m_IpAddressZ21));
     memset(m_SsidName, '\0', sizeof(m_SsidName));
     memset(m_SsidPassword, '\0', sizeof(m_SsidPassword));
+#endif
 
     Serial.print("Number of locs  : ");
     Serial.println(m_locLib.GetNumberOfLocs());
 
     Serial.print("Ac control      : ");
-    if (EEPROM.read(EepCfg::AcTypeControlAddress) == 1)
+    if (m_LocStorage.AcOptionGet() == 1)
     {
         Serial.println("On.");
     }
@@ -714,7 +731,10 @@ void WmcCli::ShowSettings(void)
     {
         Serial.println("Off.");
     }
-
+#if APP_CFG_UC == APP_CFG_UC_STM32
+    Serial.print("XPessNet address: ");
+    Serial.println(m_LocStorage.XpNetAddressGet());
+#else
     /* Get and print the network settings. */
     EEPROM.get(EepCfg::SsidAddress, m_SsidName);
     Serial.print("Ssid            : ");
@@ -745,8 +765,10 @@ void WmcCli::ShowSettings(void)
     {
         Serial.println("Static IP       : Disabled.");
     }
+#endif
 }
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
 /***********************************************************************************************************************
  */
 bool WmcCli::IpGetData(const char* SourcePtr, uint8_t* TargetPtr)
@@ -818,3 +840,4 @@ void WmcCli::IpSettingsDefault(void)
 
     EEPROM.commit();
 }
+#endif

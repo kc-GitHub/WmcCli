@@ -11,11 +11,14 @@
 /***********************************************************************************************************************
  * I N C L U D E S
  **********************************************************************************************************************/
-
 #include "Loclib.h"
-#include "WmcCli.h"
-#include "WmcTft.h"
-#include "wmc_app.h"
+#include "app_cfg.h"
+
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
+#include "wmc_event.h"
+#else
+#include "xmc_event.h"
+#endif
 #include <Arduino.h>
 
 /***********************************************************************************************************************
@@ -34,7 +37,7 @@ public:
     /**
      * Init the cli module.
      */
-    void Init(void);
+    void Init(LocLib LocLib, LocStorage LocStorage);
 
     /**
      * Update the cli module.
@@ -51,7 +54,7 @@ private:
      * Show help screen.
      */
     void HelpScreen(void);
-
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     /**
      * Write SSID name.
      */
@@ -71,7 +74,7 @@ private:
      * Show programmed IP settings.
      */
     void ShowNetworkSettings(void);
-
+#endif
     /**
      * Try to add loc.
      */
@@ -97,6 +100,7 @@ private:
      */
     bool AcControlType(void);
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     /**
      * Toggle between static and dynamic ip address.
      */
@@ -116,7 +120,7 @@ private:
      * Write IP subnet of WMC.
      */
     bool IpAddressWriteSubnet(void);
-
+#endif
     /**
      * Dump data for backup.
      */
@@ -127,6 +131,7 @@ private:
      */
     void ShowSettings(void);
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     /**
      * Retrieve Ip data from string.
      */
@@ -136,6 +141,7 @@ private:
      * Print ip data.
      */
     void IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr);
+#endif
 
     /**
      * Default IP settings.
@@ -143,7 +149,7 @@ private:
     void IpSettingsDefault(void);
 
     LocLib m_locLib;
-    WmcTft m_wmcTft;
+    LocStorage m_LocStorage;
     char m_bufferRx[40];
     uint16_t m_bufferRxIndex;
     uint16_t m_Address;
@@ -151,18 +157,21 @@ private:
     uint16_t m_Function;
     uint16_t m_Button;
     char m_NameStr[10];
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     char m_SsidName[40];
     char m_SsidPassword[40];
     uint8_t m_IpAddressZ21[4];
     uint8_t m_IpAddresWmc[4];
     uint8_t m_IpGateway[4];
     uint8_t m_IpSubnet[4];
+#endif
 
     static const char* LocAdd;
     static const char* LocDelete;
     static const char* LocChange;
     static const char* LocDeleteAll;
     static const char* EraseAll;
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     static const char* Ssid;
     static const char* Password;
     static const char* IpAdrressZ21;
@@ -170,11 +179,14 @@ private:
     static const char* Ip;
     static const char* Gateway;
     static const char* Subnet;
+#endif
     static const char* Help;
     static const char* LocList;
     static const char* Ac;
     static const char* Dump;
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     static const char* StaticIp;
+#endif
     static const char* Settings;
 
     cliEnterEvent Event;
