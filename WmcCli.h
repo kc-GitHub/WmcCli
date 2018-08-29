@@ -44,6 +44,13 @@ public:
      */
     void Update(void);
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
+    /**
+     * Default IP settings.
+     */
+    void IpSettingsDefault(void);
+#endif
+
 private:
     /**
      * Check an process received command.
@@ -141,13 +148,8 @@ private:
      * Print ip data.
      */
     void IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr);
+
 #endif
-
-    /**
-     * Default IP settings.
-     */
-    void IpSettingsDefault(void);
-
     LocLib m_locLib;
     LocStorage m_LocStorage;
     char m_bufferRx[40];
@@ -171,6 +173,11 @@ private:
     static const char* LocChange;
     static const char* LocDeleteAll;
     static const char* EraseAll;
+    static const char* Help;
+    static const char* LocList;
+    static const char* Ac;
+    static const char* Dump;
+    static const char* Settings;
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     static const char* Ssid;
     static const char* Password;
@@ -179,15 +186,8 @@ private:
     static const char* Ip;
     static const char* Gateway;
     static const char* Subnet;
-#endif
-    static const char* Help;
-    static const char* LocList;
-    static const char* Ac;
-    static const char* Dump;
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
     static const char* StaticIp;
 #endif
-    static const char* Settings;
 
     cliEnterEvent Event;
 };
