@@ -23,6 +23,11 @@ const char* WmcCli::LocChange    = "change ";
 const char* WmcCli::LocDeleteAll = "clear";
 const char* WmcCli::EraseAll     = "erase";
 const char* WmcCli::Emergency    = "emergency";
+const char* WmcCli::Help         = "help";
+const char* WmcCli::LocList      = "list";
+const char* WmcCli::Ac           = "ac";
+const char* WmcCli::Dump         = "dump";
+const char* WmcCli::Settings     = "settings";
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
 const char* WmcCli::Ssid          = "ssid ";
 const char* WmcCli::Password      = "password ";
@@ -33,15 +38,8 @@ const char* WmcCli::Subnet        = "subnet";
 const char* WmcCli::Network       = "network";
 const char* WmcCli::AdcInvalidate = "adc";
 const char* WmcCli::Buttons       = "buttons";
+const char* WmcCli::StaticIp      = "static";
 #endif
-const char* WmcCli::Help    = "help";
-const char* WmcCli::LocList = "list";
-const char* WmcCli::Ac      = "ac";
-const char* WmcCli::Dump    = "dump";
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
-const char* WmcCli::StaticIp = "static";
-#endif
-const char* WmcCli::Settings = "settings";
 
 /***********************************************************************************************************************
    F U N C T I O N S
@@ -727,7 +725,7 @@ void WmcCli::PrintButtonAdcData(void)
             }
             else
             {
-                Serial.print("Reference    : ");
+                Serial.print("Reference     : ");
             }
             Serial.println(AdcValue);
         }
