@@ -178,6 +178,7 @@ private:
     static const char* LocChange;
     static const char* LocDeleteAll;
     static const char* EraseAll;
+    static const char* Emergency;
     static const char* Help;
     static const char* LocList;
     static const char* Ac;

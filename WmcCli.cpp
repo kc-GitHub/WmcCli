@@ -22,6 +22,7 @@ const char* WmcCli::LocDelete    = "del ";
 const char* WmcCli::LocChange    = "change ";
 const char* WmcCli::LocDeleteAll = "clear";
 const char* WmcCli::EraseAll     = "erase";
+const char* WmcCli::Emergency    = "emergency";
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
 const char* WmcCli::Ssid          = "ssid ";
 const char* WmcCli::Password      = "password ";
@@ -146,7 +147,21 @@ void WmcCli::Process(void)
         Serial.println("All data cleared.");
         send_event(Event);
     }
-
+    else if (strncmp(m_bufferRx, Emergency, strlen(Emergency)) == 0)
+    {
+        if (m_LocStorage.EmergencyOptionGet() != 1)
+        {
+            m_LocStorage.EmergencyOptionSet(1);
+            Serial.println("Emergency stop enabled.");
+            send_event(Event);
+        }
+        else
+        {
+            m_LocStorage.EmergencyOptionSet(0);
+            Serial.println("Emergency stop disabled.");
+            send_event(Event);
+        }
+    }
     else if (strncmp(m_bufferRx, LocChange, strlen(LocChange)) == 0)
     {
         if (Change() == true)
@@ -253,6 +268,7 @@ void WmcCli::HelpScreen(void)
     Serial.println("clear           : Delete ALL locs.");
     Serial.println("erase           : Erase ALL data.");
     Serial.println("change x y z    : Assign function z to button y of loc with address x.");
+    Serial.println("emergency       : Toggle between power off and emergency stop.");
     Serial.println("list            : Show all programmed locs.");
     Serial.println("dump            : Dump data for backup.");
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
@@ -783,6 +799,16 @@ void WmcCli::ShowSettings(void)
     {
         Serial.println("Off.");
     }
+    Serial.print("Emergency stop  : ");
+    if (m_LocStorage.EmergencyOptionGet() == 1)
+    {
+        Serial.println("Enabled.");
+    }
+    else
+    {
+        Serial.println("Disabled.");
+    }
+
 #if APP_CFG_UC == APP_CFG_UC_STM32
     Serial.print("XPessNet address: ");
     Serial.println(m_LocStorage.XpNetAddressGet());
