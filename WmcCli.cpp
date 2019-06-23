@@ -20,14 +20,16 @@
 const char* WmcCli::LocAdd       = "add";
 const char* WmcCli::LocDelete    = "del ";
 const char* WmcCli::LocChange    = "change ";
+const char* WmcCli::LocName      = "name ";
 const char* WmcCli::LocDeleteAll = "clear";
 const char* WmcCli::EraseAll     = "erase";
-const char* WmcCli::Emergency    = "emergency";
+const char* WmcCli::Emergency    = "emergency ";
 const char* WmcCli::Help         = "help";
 const char* WmcCli::LocList      = "list";
 const char* WmcCli::Ac           = "ac";
 const char* WmcCli::Dump         = "dump";
 const char* WmcCli::Settings     = "settings";
+const char* WmcCli::Reset        = "reset";
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
 const char* WmcCli::Ssid          = "ssid ";
 const char* WmcCli::Password      = "password ";
@@ -133,13 +135,11 @@ void WmcCli::Process(void)
     else if (strncmp(m_bufferRx, EraseAll, strlen(EraseAll)) == 0)
     {
         m_locLib.InitialLocStore();
+        m_LocStorage.AcOptionSet(0);
+        m_LocStorage.EmergencyOptionSet(0);
+
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
         IpSettingsDefault();
-#endif
-
-        EEPROM.write(EepCfg::AcTypeControlAddress, 0);
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
-        EEPROM.commit();
 #endif
 
         Serial.println("All data cleared.");
@@ -147,16 +147,8 @@ void WmcCli::Process(void)
     }
     else if (strncmp(m_bufferRx, Emergency, strlen(Emergency)) == 0)
     {
-        if (m_LocStorage.EmergencyOptionGet() != 1)
+        if (EmergencyChange())
         {
-            m_LocStorage.EmergencyOptionSet(1);
-            Serial.println("Emergency stop enabled.");
-            send_event(Event);
-        }
-        else
-        {
-            m_LocStorage.EmergencyOptionSet(0);
-            Serial.println("Emergency stop disabled.");
             send_event(Event);
         }
     }
@@ -167,6 +159,14 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+    else if (strncmp(m_bufferRx, LocName, strlen(LocName)) == 0)
+    {
+        if (SetName() == true)
+        {
+            send_event(Event);
+        }
+    }
+
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     else if (strncmp(m_bufferRx, Ssid, strlen(Ssid)) == 0)
     {
@@ -209,6 +209,12 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
+#if APP_CFG_UC == APP_CFG_UC_STM32
+    else if (strncmp(m_bufferRx, Reset, strlen(Reset)) == 0)
+    {
+        nvic_sys_reset();
+    }
+#endif
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     else if (strncmp(m_bufferRx, StaticIp, strlen(StaticIp)) == 0)
     {
@@ -262,11 +268,12 @@ void WmcCli::Process(void)
 void WmcCli::HelpScreen(void)
 {
     Serial.println("add x           : Add loc with address x.");
+    Serial.println("name x y        : Set name of loc address x with name y.");
     Serial.println("del x           : Delete loc with address x.");
     Serial.println("clear           : Delete ALL locs.");
     Serial.println("erase           : Erase ALL data.");
     Serial.println("change x y z    : Assign function z to button y of loc with address x.");
-    Serial.println("emergency       : Toggle between power off and emergency stop.");
+    Serial.println("emergency x     : Set power off (0) or emergency stop (1).");
     Serial.println("list            : Show all programmed locs.");
     Serial.println("dump            : Dump data for backup.");
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
@@ -282,6 +289,9 @@ void WmcCli::HelpScreen(void)
 #endif
     Serial.println("ac x            : Enable (x=1) / disable (x=0) AC control option.");
     Serial.println("settings        : Show overview of settings.");
+#if APP_CFG_UC == APP_CFG_UC_STM32
+    Serial.println("reset           : Perform reset.");
+#endif
     Serial.println("help            : This screen.");
 }
 
@@ -395,7 +405,7 @@ bool WmcCli::Add(void)
     if ((m_Address > 0) && (m_Address <= 9999))
     {
         /* Add loc, default functions 0..4 */
-        if (m_locLib.StoreLoc(m_Address, Functions, LocLib::storeAdd) == true)
+        if (m_locLib.StoreLoc(m_Address, Functions, NULL, LocLib::storeAdd) == true)
         {
             m_locLib.LocBubbleSort();
             Serial.print("Loc with address ");
@@ -473,7 +483,7 @@ bool WmcCli::Change(void)
                     {
                         m_locLib.FunctionAssignedGetStored(m_Address, FunctionAssignment);
                         FunctionAssignment[m_Button] = m_Function;
-                        m_locLib.StoreLoc(m_Address, FunctionAssignment, LocLib::storeChange);
+                        m_locLib.StoreLoc(m_Address, FunctionAssignment, NULL, LocLib::storeChange);
                         Serial.println("Loc function updated.");
                         Result = true;
                     }
@@ -509,25 +519,66 @@ bool WmcCli::Change(void)
 
 /***********************************************************************************************************************
  */
+bool WmcCli::SetName(void)
+{
+    char* Space;
+    bool Result = false;
+
+    Space = strchr(m_bufferRx, 32);
+    Space++;
+
+    m_Address = atoi(Space);
+
+    Space = strchr(Space, 32);
+
+    if (Space != NULL)
+    {
+        Space++;
+        /* Get data of loc. */
+        if (m_locLib.CheckLoc(m_Address) != 255)
+        {
+            m_locLib.StoreLoc(m_Address, NULL, Space, LocLib::storeChange);
+            Serial.println("Loc name updated.");
+            Result = true;
+        }
+        else
+        {
+            Serial.print("Loc ");
+            Serial.print(m_Address);
+            Serial.println(" is not present.");
+        }
+    }
+    else
+    {
+        Serial.println("Command invalid.");
+    }
+
+    return (Result);
+}
+
+/***********************************************************************************************************************
+ */
 void WmcCli::ListAllLocs(void)
 {
     uint8_t Index = 0;
     LocLibData* Data;
     char output[30];
 
-    Serial.println("          Functions               Functions               Functions    ");
-    Serial.println("Address B0 B1 B2 B3 B4  Address B0 B1 B2 B3 B4  Address B0 B1 B2 B3 B4 ");
+    /* Print header. */
+    Serial.println("          Functions                         Functions               ");
+    Serial.println("Address B0 B1 B2 B3 B4  Name      Address B0 B1 B2 B3 B4  Name      ");
 
+    /* Print two locs with info on one line. */
     while (Index < m_locLib.GetNumberOfLocs())
     {
         Data = m_locLib.LocGetAllDataByIndex(Index);
-        sprintf(output, "%4hu    %2hu %2hu %2hu %2hu %2hu  ", Data->Addres, Data->FunctionAssignment[0],
+        sprintf(output, "%4hu    %2hu %2hu %2hu %2hu %2hu %-8s", Data->Addres, Data->FunctionAssignment[0],
             Data->FunctionAssignment[1], Data->FunctionAssignment[2], Data->FunctionAssignment[3],
-            Data->FunctionAssignment[4]);
+            Data->FunctionAssignment[4], Data->Name);
         Serial.print(output);
 
         Index++;
-        if ((Index % 3) == 0)
+        if ((Index % 2) == 0)
         {
             Serial.println();
         }
@@ -536,6 +587,47 @@ void WmcCli::ListAllLocs(void)
     Serial.println();
 }
 
+/***********************************************************************************************************************
+ */
+bool WmcCli::EmergencyChange(void)
+{
+    char* Space;
+    uint8_t EmergencyOption;
+    bool Result = false;
+
+    Space = strchr(m_bufferRx, 32);
+
+    if (Space != NULL)
+    {
+        Space++;
+
+        EmergencyOption = atoi(Space);
+
+        switch (EmergencyOption)
+        {
+        case 0:
+            m_LocStorage.EmergencyOptionSet(0);
+            Serial.println("Stop option set to power off.");
+            Result = true;
+            break;
+        case 1:
+            m_LocStorage.EmergencyOptionSet(1);
+            Serial.println("Stop option set to emergency stop");
+            Result = true;
+            break;
+        default:
+            Serial.println("Emergency entry invalid, set to power off.");
+            m_LocStorage.EmergencyOptionSet(0);
+            break;
+        }
+    }
+    else
+    {
+        Serial.println("Emergency option entry invalid, must be emergency 0 or emergency 1");
+    }
+
+    return (Result);
+}
 /***********************************************************************************************************************
  */
 bool WmcCli::AcControlType(void)
@@ -564,7 +656,10 @@ bool WmcCli::AcControlType(void)
             Serial.println("AC option enabled.");
             Result = true;
             break;
-        default: Serial.println("AC option entry invalid."); break;
+        default:
+            Serial.println("AC option entry invalid, option set to disabled.");
+            m_LocStorage.AcOptionSet(0);
+            break;
         }
     }
     else
@@ -742,10 +837,13 @@ void WmcCli::PrintButtonAdcData(void)
  */
 void WmcCli::DumpData(void)
 {
-    uint8_t Index = 0;
-    uint8_t FunctionIndex;
-    LocLibData* Data;
+    uint8_t Index          = 0;
+    uint8_t FunctionIndex  = 0;
+    uint16_t AcOption      = 0;
+    uint16_t EmergencyStop = 0;
+    LocLibData* Data       = NULL;
 
+    // Loc address and functions
     while (Index < m_locLib.GetNumberOfLocs())
     {
         Data = m_locLib.LocGetAllDataByIndex(Index);
@@ -764,14 +862,45 @@ void WmcCli::DumpData(void)
 
         Index++;
     }
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
-    ShowNetworkSettings();
-#endif
+
+    // Locnames
+    Index = 0;
+    while (Index < m_locLib.GetNumberOfLocs())
+    {
+        Data = m_locLib.LocGetAllDataByIndex(Index);
+        if (strlen(Data->Name) > 0)
+        {
+            Serial.print(LocName);
+            Serial.print(Data->Addres);
+            Serial.print(" ");
+            Serial.println(Data->Name);
+        }
+        Index++;
+    }
 
     /* Dump the AC option. */
     Serial.print(Ac);
     Serial.print(" ");
-    Serial.println(EEPROM.read(EepCfg::AcTypeControlAddress));
+    AcOption = EEPROM.read(EepCfg::AcTypeControlAddress);
+    if (AcOption > 1)
+    {
+        AcOption = 0;
+    }
+    Serial.println(AcOption);
+
+    /* Dump the emergency option. */
+    Serial.print(Emergency);
+    Serial.print(" ");
+    EmergencyStop = EEPROM.read(EepCfg::EmergencyStopEnabledAddress);
+    if (EmergencyStop > 1)
+    {
+        EmergencyStop = 0;
+    }
+    Serial.println(EmergencyStop);
+
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
+    ShowNetworkSettings();
+#endif
 }
 
 /***********************************************************************************************************************

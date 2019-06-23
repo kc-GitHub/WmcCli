@@ -103,9 +103,19 @@ private:
     void ListAllLocs(void);
 
     /**
+     * Set name of loc.
+     */
+    bool SetName(void);
+
+    /**
      * Set control type, normal or AC.
      */
     bool AcControlType(void);
+
+    /**
+     * Set control emergency option
+     */
+    bool EmergencyChange(void);
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     /**
@@ -176,6 +186,7 @@ private:
     static const char* LocAdd;
     static const char* LocDelete;
     static const char* LocChange;
+    static const char* LocName;
     static const char* LocDeleteAll;
     static const char* EraseAll;
     static const char* Emergency;
@@ -184,6 +195,7 @@ private:
     static const char* Ac;
     static const char* Dump;
     static const char* Settings;
+    static const char* Reset;
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     static const char* Ssid;
     static const char* Password;
