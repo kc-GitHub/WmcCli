@@ -140,6 +140,8 @@ void WmcCli::Process(void)
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
         IpSettingsDefault();
+#elif APP_CFG_UC == APP_CFG_UC_STM32
+        m_LocStorage.XpNetAddressSet(255);
 #endif
 
         Serial.println("All data cleared.");
