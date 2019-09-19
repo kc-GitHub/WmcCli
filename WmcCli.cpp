@@ -248,9 +248,7 @@ void WmcCli::Process(void)
     }
     else if (strncmp(m_bufferRx, AdcInvalidate, strlen(AdcInvalidate)) == 0)
     {
-        uint8_t buttonAdcValid = 0;
-        EEPROM.write(EepCfg::ButtonAdcValuesAddressValid, buttonAdcValid);
-        EEPROM.commit();
+        m_LocStorage.InvalidateAdc();
         Serial.println("ADC values for button invalidated.");
         send_event(Event);
     }
