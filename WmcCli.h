@@ -167,7 +167,7 @@ private:
 #endif
     LocLib m_locLib;
     LocStorage m_LocStorage;
-    char m_bufferRx[40];
+    char m_bufferRx[75];
     uint16_t m_bufferRxIndex;
     uint16_t m_Address;
     uint16_t m_DecoderSteps;
@@ -176,7 +176,7 @@ private:
     char m_NameStr[10];
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     char m_SsidName[40];
-    char m_SsidPassword[40];
+    char m_SsidPassword[64];
     uint8_t m_IpAddressZ21[4];
     uint8_t m_IpAddresWmc[4];
     uint8_t m_IpGateway[4];
