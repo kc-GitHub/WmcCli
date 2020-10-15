@@ -137,11 +137,6 @@ private:
      * Write IP subnet of WMC.
      */
     bool IpAddressWriteSubnet(void);
-
-    /**
-     * Show ADC data of buttons.
-     */
-    void PrintButtonAdcData(void);
 #endif
     /**
      * Dump data for backup.
@@ -205,8 +200,6 @@ private:
     static const char* Gateway;
     static const char* Subnet;
     static const char* StaticIp;
-    static const char* AdcInvalidate;
-    static const char* Buttons;
 #endif
 
     cliEnterEvent Event;

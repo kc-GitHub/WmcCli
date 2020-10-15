@@ -38,7 +38,6 @@ const char* WmcCli::Ip            = "ip";
 const char* WmcCli::Gateway       = "gateway";
 const char* WmcCli::Subnet        = "subnet";
 const char* WmcCli::Network       = "network";
-const char* WmcCli::AdcInvalidate = "adc";
 const char* WmcCli::Buttons       = "buttons";
 const char* WmcCli::StaticIp      = "static";
 #endif
@@ -246,16 +245,6 @@ void WmcCli::Process(void)
             send_event(Event);
         }
     }
-    else if (strncmp(m_bufferRx, AdcInvalidate, strlen(AdcInvalidate)) == 0)
-    {
-        m_LocStorage.InvalidateAdc();
-        Serial.println("ADC values for button invalidated.");
-        send_event(Event);
-    }
-    else if (strncmp(m_bufferRx, Buttons, strlen(Buttons)) == 0)
-    {
-        PrintButtonAdcData();
-    }
 #endif
     else
     {
@@ -277,8 +266,6 @@ void WmcCli::HelpScreen(void)
     Serial.println("list            : Show all programmed locs.");
     Serial.println("dump            : Dump data for backup.");
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
-    Serial.println("adc             : Invalidate ADC button values.");
-    Serial.println("buttons         : Show ADC value for each button.");
     Serial.println("ssid <>         : Set SSID name (Wifi) to connect to.");
     Serial.println("password <>     : Set password (Wifi).");
     Serial.println("z21 a.b.c.d     : Set IP address of Z21 control.");
@@ -795,42 +782,6 @@ bool WmcCli::IpAddressWriteSubnet(void)
 
     return (Result);
 }
-
-/***********************************************************************************************************************
- */
-void WmcCli::PrintButtonAdcData(void)
-{
-    uint8_t AdcValid;
-    uint8_t Index     = 0;
-    uint16_t AdcValue = 0;
-
-    AdcValid = EEPROM.read(EepCfg::ButtonAdcValuesAddressValid);
-
-    if (AdcValid == 1)
-    {
-        for (Index = 0; Index < 7; Index++)
-        {
-            AdcValue = (uint16_t)(EEPROM.read(EepCfg::ButtonAdcValuesAddress + (Index * 2))) << 8;
-            AdcValue |= (uint16_t)(EEPROM.read(EepCfg::ButtonAdcValuesAddress + (Index * 2) + 1));
-            if (Index <= 5)
-            {
-                Serial.print("Button    : ");
-                Serial.print(Index);
-                Serial.print(" : ");
-            }
-            else
-            {
-                Serial.print("Reference     : ");
-            }
-            Serial.println(AdcValue);
-        }
-    }
-    else
-    {
-        Serial.println("Button ADC data not valid");
-    }
-}
-
 #endif
 
 /***********************************************************************************************************************
