@@ -60,7 +60,7 @@ WmcCli::WmcCli()
  */
 void WmcCli::Init(LocLib LocLib, LocStorage LocStorage)
 {
-    Serial.begin(115200);
+    Serial.begin(76800);
     m_locLib     = LocLib;
     m_LocStorage = LocStorage;
 }
