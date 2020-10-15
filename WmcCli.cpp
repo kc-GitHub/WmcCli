@@ -38,7 +38,6 @@ const char* WmcCli::Ip            = "ip";
 const char* WmcCli::Gateway       = "gateway";
 const char* WmcCli::Subnet        = "subnet";
 const char* WmcCli::Network       = "network";
-const char* WmcCli::Buttons       = "buttons";
 const char* WmcCli::StaticIp      = "static";
 #endif
 
