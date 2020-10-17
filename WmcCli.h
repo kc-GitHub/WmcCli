@@ -44,13 +44,6 @@ public:
      */
     void Update(void);
 
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
-    /**
-     * Default IP settings.
-     */
-    void IpSettingsDefault(void);
-#endif
-
 private:
     /**
      * Check an process received command.
@@ -62,21 +55,6 @@ private:
      */
     void HelpScreen(void);
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
-    /**
-     * Write SSID name.
-     */
-    void SsIdWriteName(void);
-
-    /**
-     * Write SSID password.
-     */
-    void SsIdWritePassword(void);
-
-    /**
-     * Write IP address to connect to.
-     */
-    bool IpAddressWriteZ21(void);
-
     /**
      * Show programmed IP settings.
      */
@@ -117,27 +95,6 @@ private:
      */
     bool EmergencyChange(void);
 
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
-    /**
-     * Toggle between static and dynamic ip address.
-     */
-    bool StaticIpChange(void);
-
-    /**
-     * Write fixed (static) IP address of WMC.
-     */
-    bool IpAddressWriteWmc(void);
-
-    /**
-     * Write IP gateway of WMC.
-     */
-    bool IpAddressWriteGateway(void);
-
-    /**
-     * Write IP subnet of WMC.
-     */
-    bool IpAddressWriteSubnet(void);
-#endif
     /**
      * Dump data for backup.
      */
@@ -149,11 +106,6 @@ private:
     void ShowSettings(void);
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
-    /**
-     * Retrieve Ip data from string.
-     */
-    bool IpGetData(const char* SourcePtr, uint8_t* TargetPtr);
-
     /**
      * Print ip data.
      */
@@ -170,12 +122,7 @@ private:
     uint16_t m_Button;
     char m_NameStr[10];
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
-    char m_SsidName[40];
-    char m_SsidPassword[64];
     uint8_t m_IpAddressZ21[4];
-    uint8_t m_IpAddresWmc[4];
-    uint8_t m_IpGateway[4];
-    uint8_t m_IpSubnet[4];
 #endif
 
     static const char* LocAdd;
@@ -193,13 +140,8 @@ private:
     static const char* Reset;
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     static const char* Ssid;
-    static const char* Password;
     static const char* IpAdrressZ21;
     static const char* Network;
-    static const char* Ip;
-    static const char* Gateway;
-    static const char* Subnet;
-    static const char* StaticIp;
 #endif
 
     cliEnterEvent Event;
