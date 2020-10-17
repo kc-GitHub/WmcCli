@@ -608,10 +608,6 @@ void WmcCli::DumpData(void)
         EmergencyStop = 0;
     }
     Serial.println(EmergencyStop);
-
-#if APP_CFG_UC == APP_CFG_UC_ESP8266
-    ShowNetworkSettings();
-#endif
 }
 
 /***********************************************************************************************************************
