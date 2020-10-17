@@ -245,7 +245,12 @@ void WmcCli::ShowNetworkSettings(void)
  */
 bool WmcCli::Add(void)
 {
-    uint8_t Functions[5] = { 0, 1, 2, 3, 4 };
+    uint8_t Functions[MAX_FUNCTION_BUTTONS];
+    for (uint8_t i = 0; i < MAX_FUNCTION_BUTTONS; i++)
+    {
+        Functions[i] = i;
+    }
+
     bool Result          = false;
 
     m_Address = atoi(&m_bufferRx[strlen(LocAdd)]);
@@ -301,7 +306,7 @@ bool WmcCli::Delete(void)
 bool WmcCli::Change(void)
 {
     char* Space;
-    uint8_t FunctionAssignment[5];
+    uint8_t FunctionAssignment[MAX_FUNCTION_BUTTONS];
     bool Result = false;
 
     Space = strchr(m_bufferRx, 32);
@@ -325,7 +330,7 @@ bool WmcCli::Change(void)
             /* Get actual assigned functions of loc. */
             if (m_locLib.CheckLoc(m_Address) != 255)
             {
-                if (m_Button < 5)
+                if (m_Button < MAX_FUNCTION_BUTTONS)
                 {
                     if (m_Function < 29)
                     {
@@ -342,7 +347,8 @@ bool WmcCli::Change(void)
                 }
                 else
                 {
-                    Serial.println("Invalid button number, must be 0..4");
+                    uint8_t maxFunctionButtons = MAX_FUNCTION_BUTTONS - 1;
+                    Serial.println("Invalid button number, must be 0.." + (String)maxFunctionButtons);
                 }
             }
             else
@@ -410,25 +416,45 @@ void WmcCli::ListAllLocs(void)
 {
     uint8_t Index = 0;
     LocLibData* Data;
-    char output[30];
+    char output[52];
+    uint8_t i = 0;
 
     /* Print header. */
-    Serial.println("          Functions                         Functions               ");
-    Serial.println("Address B0 B1 B2 B3 B4  Name      Address B0 B1 B2 B3 B4  Name      ");
+
+    String space = "        ";
+    for (i = 0; i < MAX_FUNCTION_BUTTONS; i++)
+    {
+        space += "   ";
+    }
+    Serial.println("        Functions" + space + "  Functions" + space);
+
+
+    String buttons = "";
+    for (i = 0; i < MAX_FUNCTION_BUTTONS; i++)
+    {
+        buttons += " B" + (String)i;
+    }
+    Serial.println("Address" + buttons + "  Name        Address" + buttons + "  Name      ");
 
     /* Print two locs with info on one line. */
     while (Index < m_locLib.GetNumberOfLocs())
     {
         Data = m_locLib.LocGetAllDataByIndex(Index);
-        sprintf(output, "%4hu    %2hu %2hu %2hu %2hu %2hu %-8s", Data->Addres, Data->FunctionAssignment[0],
-            Data->FunctionAssignment[1], Data->FunctionAssignment[2], Data->FunctionAssignment[3],
-            Data->FunctionAssignment[4], Data->Name);
+
+        buttons = "";
+        for (i = 0; i < MAX_FUNCTION_BUTTONS; i++)
+        {
+            sprintf(output, "%2hu ", Data->FunctionAssignment[i]);
+            buttons += (String)output;
+        }
+
+        sprintf(output, "%7hu %s %-10s  ", Data->Addres, buttons.c_str(), Data->Name);
         Serial.print(output);
 
         Index++;
         if ((Index % 2) == 0)
         {
-            Serial.println();
+            Serial.println("");
         }
     }
 
@@ -535,7 +561,7 @@ void WmcCli::DumpData(void)
         Serial.print(LocAdd);
         Serial.println(Data->Addres);
 
-        for (FunctionIndex = 0; FunctionIndex < 5; FunctionIndex++)
+        for (FunctionIndex = 0; FunctionIndex < MAX_FUNCTION_BUTTONS; FunctionIndex++)
         {
             Serial.print(LocChange);
             Serial.print(Data->Addres);
