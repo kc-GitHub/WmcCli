@@ -74,6 +74,11 @@ private:
     void HelpScreen(void);
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
     /**
+     * Write IP address to connect to.
+     */
+    bool IpAddressWriteZ21(void);
+
+    /**
      * Show programmed IP settings.
      */
     void ShowNetworkSettings(void);
@@ -124,6 +129,11 @@ private:
     void ShowSettings(void);
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
+     /**
+      * Retrieve Ip data from string.
+      */
+     bool IpGetData(const char* SourcePtr, uint8_t* TargetPtr);
+
     /**
      * Print ip data.
      */

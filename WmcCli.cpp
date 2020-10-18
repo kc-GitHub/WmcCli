@@ -34,6 +34,7 @@ const char* WmcCli::Settings     = "settings";
 const char* WmcCli::Reset        = "reset";
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
 const char* WmcCli::Exit          = "exit";
+const char* WmcCli::IpAdrressZ21  = "z21 ";
 const char* WmcCli::Network       = "network";
 ESPTelnet telnet;
 #endif
@@ -274,6 +275,13 @@ void WmcCli::Process(void)
         telnet.println("Bye");
         telnet.close();
     }
+    else if (strncmp(m_bufferRx, IpAdrressZ21, strlen(IpAdrressZ21)) == 0)
+    {
+        if (IpAddressWriteZ21() == true)
+        {
+            send_event(Event);
+        }
+    }
     else if (strncmp(m_bufferRx, Network, strlen(Network)) == 0)
     {
         ShowNetworkSettings();
@@ -323,6 +331,9 @@ void WmcCli::HelpScreen(void)
     println("emergency x     : Set power off (0) or emergency stop (1).");
     println("list            : Show all programmed locs.");
     println("dump            : Dump data for backup.");
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
+    println("z21 a.b.c.d     : Set IP address of Z21 control.");
+#endif
     println("ac x            : Enable (x=1) / disable (x=0) AC control option.");
     println("settings        : Show overview of settings.");
 #if APP_CFG_UC == APP_CFG_UC_STM32
@@ -336,6 +347,35 @@ void WmcCli::HelpScreen(void)
 /***********************************************************************************************************************
  */
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
+/***********************************************************************************************************************
+ */
+bool WmcCli::IpAddressWriteZ21(void)
+{
+    bool Result = true;
+
+    if (IpGetData(IpAdrressZ21, m_IpAddressZ21) == true)
+    {
+        EEPROM.put(EepCfg::EepIpAddressZ21, m_IpAddressZ21);
+        EEPROM.commit();
+
+        print("IP Address Z21 stored : ");
+        print(m_IpAddressZ21[0]);
+        print(".");
+        print(m_IpAddressZ21[1]);
+        print(".");
+        print(m_IpAddressZ21[2]);
+        print(".");
+        println(m_IpAddressZ21[3]);
+    }
+    else
+    {
+        Result = false;
+        println("IP Address Z21 entry invalid!");
+    }
+
+    return (Result);
+}
+
 /***********************************************************************************************************************
  */
 void WmcCli::ShowNetworkSettings(void)
@@ -720,6 +760,10 @@ void WmcCli::DumpData(void)
         EmergencyStop = 0;
     }
     println(EmergencyStop);
+
+    memset(m_IpAddressZ21, 0, sizeof(IpAdrressZ21));
+    EEPROM.get(EepCfg::EepIpAddressZ21, m_IpAddressZ21);
+    IpDataPrint(IpAdrressZ21, m_IpAddressZ21);
 }
 
 /***********************************************************************************************************************
@@ -759,6 +803,39 @@ void WmcCli::ShowSettings(void)
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
 /***********************************************************************************************************************
  */
+
+/***********************************************************************************************************************
+ */
+bool WmcCli::IpGetData(const char* SourcePtr, uint8_t* TargetPtr)
+{
+    char* Dot;
+    bool Result   = true;
+    uint8_t Index = 0;
+
+    /* s(s)canf is not present, so get digits by locating the dot and getting value from the dot location with
+     * atoi function. */
+
+    TargetPtr[0] = atoi(&m_bufferRx[strlen(SourcePtr)]);
+    Dot          = &m_bufferRx[strlen(SourcePtr)];
+
+    while ((Index < 3) && (Dot != NULL))
+    {
+        Dot = strchr(Dot, '.');
+        if (Dot != NULL)
+        {
+            Dot++;
+            TargetPtr[1 + Index] = atoi(Dot);
+            Index++;
+        }
+        else
+        {
+            Result = false;
+        }
+    }
+
+    return (Result);
+}
+
 void WmcCli::IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr)
 {
     print(StrPtr);
