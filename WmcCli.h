@@ -16,6 +16,8 @@
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
 #include "wmc_event.h"
+#include <ESPTelnet.h>
+
 #else
 #include "xmc_event.h"
 #endif
@@ -39,10 +41,26 @@ public:
      */
     void Init(LocLib LocLib, LocStorage LocStorage);
 
+    size_t print(const char[]);
+    size_t print(const String &);
+    size_t print(int, int = DEC);
+    size_t print(unsigned char, int = DEC);
+
+    size_t println(unsigned char, int = DEC);
+    size_t println(int, int = DEC);
+    size_t println(const String &s);
+
+    size_t println(void);
+
     /**
      * Update the cli module.
      */
     void Update(void);
+
+    /**
+     * Check an process received command.
+     */
+    void Process(char *bufferRx);
 
 private:
     /**
@@ -139,6 +157,7 @@ private:
     static const char* Settings;
     static const char* Reset;
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
+    static const char* Exit;
     static const char* Ssid;
     static const char* IpAdrressZ21;
     static const char* Network;
