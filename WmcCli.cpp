@@ -14,7 +14,9 @@
 #include <EEPROM.h>
 #include <stdio.h>
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
 #include <WiFiManager.h>            //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#endif
 
 /***********************************************************************************************************************
    D A T A   D E C L A R A T I O N S (exported, local)
@@ -76,14 +78,16 @@ WmcCli::WmcCli()
     m_Function      = 0;
     m_Button        = 0;
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     wmcClassPointer = this;
+#endif
 }
 
 size_t WmcCli::print(const char str[]) {
     #if APP_CFG_UC == APP_CFG_UC_ESP8266
         telnet.print((String)str);
     #else
-        return Serial.write(s.c_str(), s.length());
+        return Serial.print(str);
     #endif
 }
 
@@ -91,7 +95,7 @@ size_t WmcCli::print(const String &s) {
     #if APP_CFG_UC == APP_CFG_UC_ESP8266
         telnet.print(s.c_str());
     #else
-        return Serial.write(s.c_str(), s.length());
+        return Serial.print(s.c_str());
     #endif
 }
 
@@ -761,9 +765,11 @@ void WmcCli::DumpData(void)
     }
     println(EmergencyStop);
 
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     memset(m_IpAddressZ21, 0, sizeof(IpAdrressZ21));
     EEPROM.get(EepCfg::EepIpAddressZ21, m_IpAddressZ21);
     IpDataPrint(IpAdrressZ21, m_IpAddressZ21);
+#endif
 }
 
 /***********************************************************************************************************************

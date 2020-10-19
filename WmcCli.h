@@ -134,12 +134,13 @@ private:
       */
      bool IpGetData(const char* SourcePtr, uint8_t* TargetPtr);
 
+#endif
+
     /**
      * Print ip data.
      */
     void IpDataPrint(const char* StrPtr, uint8_t* IpDataPtr);
 
-#endif
     LocLib m_locLib;
     LocStorage m_LocStorage;
     char m_bufferRx[75];
