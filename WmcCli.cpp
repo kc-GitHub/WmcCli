@@ -86,6 +86,7 @@ WmcCli::WmcCli()
 size_t WmcCli::print(const char str[]) {
     #if APP_CFG_UC == APP_CFG_UC_ESP8266
         telnet.print((String)str);
+        return 0;
     #else
         return Serial.print(str);
     #endif
@@ -94,22 +95,27 @@ size_t WmcCli::print(const char str[]) {
 size_t WmcCli::print(const String &s) {
     #if APP_CFG_UC == APP_CFG_UC_ESP8266
         telnet.print(s.c_str());
+        return 0;
     #else
         return Serial.print(s.c_str());
     #endif
 }
 
 size_t WmcCli::print(int n, int base) {
+    UNUSED(base);
     #if APP_CFG_UC == APP_CFG_UC_ESP8266
         telnet.print((String)n);
+        return 0;
     #else
         return Serial.print((long) n, base);
     #endif
 }
 
 size_t WmcCli::print(unsigned char b, int base) {
+    UNUSED(base);
     #if APP_CFG_UC == APP_CFG_UC_ESP8266
         telnet.print((String)b);
+        return 0;
     #else
         return Serial.print((long) b, base);
     #endif
