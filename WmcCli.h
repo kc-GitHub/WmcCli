@@ -13,14 +13,12 @@
  **********************************************************************************************************************/
 #include "Loclib.h"
 #include "app_cfg.h"
+#include <event.h>
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
-#include "wmc_event.h"
-#include <ESPTelnet.h>
-
-#else
-#include "xmc_event.h"
+    #include <ESPTelnet.h>
 #endif
+
 #include <Arduino.h>
 
 // Macro for suppress unused parameter compiler warning in c++.

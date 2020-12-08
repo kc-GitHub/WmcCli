@@ -11,10 +11,10 @@
 #include "app_cfg.h"
 #include "eep_cfg.h"
 #include "fsmlist.hpp"
-#include <EEPROM.h>
 #include <stdio.h>
 
 #if APP_CFG_UC == APP_CFG_UC_ESP8266
+#include <EEPROM.h>
 #include <WiFiManager.h>            //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #endif
 
@@ -159,7 +159,7 @@ void WmcCli::Init(LocLib LocLib, LocStorage LocStorage)
           Serial.println("Failed to start Telnet server. Is WiFi connected?");
         }
     #else
-        Serial.begin(76800);
+        Serial.begin(115200);
     #endif
 
     m_locLib     = LocLib;
@@ -419,7 +419,7 @@ bool WmcCli::Add(void)
 
     if ((m_Address > 0) && (m_Address <= 9999))
     {
-        /* Add loc, default functions 0..4 */
+        // Add loc, default functions 0 ... MAX_FUNCTION_BUTTONS
         if (m_locLib.StoreLoc(m_Address, Functions, NULL, LocLib::storeAdd) == true)
         {
             m_locLib.LocBubbleSort();
@@ -754,7 +754,12 @@ void WmcCli::DumpData(void)
     /* Dump the AC option. */
     print(Ac);
     print(" ");
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     AcOption = EEPROM.read(EepCfg::AcTypeControlAddress);
+#else
+    AcOption = m_LocStorage.AcOptionGet();
+#endif
+
     if (AcOption > 1)
     {
         AcOption = 0;
@@ -764,7 +769,12 @@ void WmcCli::DumpData(void)
     /* Dump the emergency option. */
     print(Emergency);
     print(" ");
+
+#if APP_CFG_UC == APP_CFG_UC_ESP8266
     EmergencyStop = EEPROM.read(EepCfg::EmergencyStopEnabledAddress);
+#else
+    EmergencyStop = m_LocStorage.EmergencyOptionGet();
+#endif
     if (EmergencyStop > 1)
     {
         EmergencyStop = 0;
